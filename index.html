@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>刮刮樂紓壓遊戲</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>🎰 刮刮樂</h1>
+      <div id="balance-bar">
+        <span>💰 籌碼：</span>
+        <span id="balance">1000</span>
+      </div>
+    </header>
+
+    <section id="shop">
+      <h2>購買刮刮樂</h2>
+      <div id="card-shop">
+        <div class="card-option" data-type="cheap">
+          <div class="card-preview">🎟️</div>
+          <div class="card-info">
+            <strong>基本款</strong>
+            <span>費用：50 籌碼</span>
+            <small>獎池：-100 ~ +300</small>
+          </div>
+          <button class="buy-btn" data-type="cheap">購買</button>
+        </div>
+
+        <div class="card-option" data-type="mid">
+          <div class="card-preview">🎫</div>
+          <div class="card-info">
+            <strong>進階款</strong>
+            <span>費用：150 籌碼</span>
+            <small>獎池：-200 ~ +800</small>
+          </div>
+          <button class="buy-btn" data-type="mid">購買</button>
+        </div>
+
+        <div class="card-option" data-type="premium">
+          <div class="card-preview">💎</div>
+          <div class="card-info">
+            <strong>豪華款</strong>
+            <span>費用：500 籌碼</span>
+            <small>獎池：-500 ~ +3000</small>
+          </div>
+          <button class="buy-btn" data-type="premium">購買</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="scratch-area" class="hidden">
+      <h2>刮開你的刮刮樂！</h2>
+      <div id="scratch-card">
+        <canvas id="scratch-canvas"></canvas>
+        <div id="card-result" class="hidden">
+          <div id="result-emoji"></div>
+          <div id="result-text"></div>
+          <div id="result-amount"></div>
+        </div>
+      </div>
+      <button id="reveal-btn">一鍵全刮</button>
+      <button id="back-btn">返回商店</button>
+    </section>
+
+    <section id="history-area">
+      <h2>紀錄</h2>
+      <ul id="history-list">
+        <li class="history-empty">尚無購買記錄</li>
+      </ul>
+    </section>
+
+    <div id="overlay" class="hidden">
+      <div id="modal">
+        <div id="modal-emoji"></div>
+        <h2 id="modal-title"></h2>
+        <p id="modal-msg"></p>
+        <button id="modal-close">繼續</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
