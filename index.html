@@ -7,71 +7,115 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Fixed overlays -->
+  <canvas id="particle-canvas"></canvas>
+  <div id="flash-overlay"></div>
+
   <div id="app">
     <header>
       <h1>🎰 刮刮樂</h1>
-      <div id="balance-bar">
-        <span>💰 籌碼：</span>
-        <span id="balance">1000</span>
+      <div id="header-right">
+        <div id="balance-bar">
+          <span>💰</span>
+          <span id="balance">1,000</span>
+        </div>
+        <button id="sound-toggle" title="關閉音效">🔊</button>
       </div>
     </header>
 
+    <!-- Stats bar -->
+    <div id="stats-bar">
+      <div class="stat">
+        <span class="stat-label">局數</span>
+        <span class="stat-val" id="stat-games">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">中獎率</span>
+        <span class="stat-val" id="stat-winrate">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">最高獎</span>
+        <span class="stat-val" id="stat-best">—</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">淨盈虧</span>
+        <span class="stat-val" id="stat-net">0</span>
+      </div>
+    </div>
+
+    <!-- Shop -->
     <section id="shop">
-      <h2>購買刮刮樂</h2>
+      <h2>選擇票券</h2>
       <div id="card-shop">
-        <div class="card-option" data-type="cheap">
+        <div class="card-option card-cheap">
           <div class="card-preview">🎟️</div>
           <div class="card-info">
             <strong>基本款</strong>
-            <span>費用：50 籌碼</span>
-            <small>獎池：-100 ~ +300</small>
+            <span class="card-cost">50 籌碼</span>
+            <small>獎池 −100 ~ +300</small>
           </div>
           <button class="buy-btn" data-type="cheap">購買</button>
         </div>
-
-        <div class="card-option" data-type="mid">
+        <div class="card-option card-mid">
           <div class="card-preview">🎫</div>
           <div class="card-info">
             <strong>進階款</strong>
-            <span>費用：150 籌碼</span>
-            <small>獎池：-200 ~ +800</small>
+            <span class="card-cost">150 籌碼</span>
+            <small>獎池 −200 ~ +800</small>
           </div>
           <button class="buy-btn" data-type="mid">購買</button>
         </div>
-
-        <div class="card-option" data-type="premium">
+        <div class="card-option card-premium">
           <div class="card-preview">💎</div>
           <div class="card-info">
             <strong>豪華款</strong>
-            <span>費用：500 籌碼</span>
-            <small>獎池：-500 ~ +3000</small>
+            <span class="card-cost">500 籌碼</span>
+            <small>獎池 −500 ~ +3000</small>
           </div>
           <button class="buy-btn" data-type="premium">購買</button>
         </div>
       </div>
     </section>
 
+    <!-- Scratch area -->
     <section id="scratch-area" class="hidden">
-      <h2>刮開你的刮刮樂！</h2>
+      <h2 id="scratch-title">刮開你的刮刮樂！</h2>
       <div id="scratch-card">
         <canvas id="scratch-canvas"></canvas>
         <div id="card-result" class="hidden">
-          <div id="result-emoji"></div>
+          <div class="prize-symbols">
+            <span class="prize-symbol"></span>
+            <span class="prize-symbol"></span>
+            <span class="prize-symbol"></span>
+          </div>
           <div id="result-text"></div>
           <div id="result-amount"></div>
         </div>
+        <div class="card-shine"></div>
       </div>
-      <button id="reveal-btn">一鍵全刮</button>
-      <button id="back-btn">返回商店</button>
+
+      <div id="scratch-progress">
+        <div id="scratch-progress-bar-wrap">
+          <div id="scratch-progress-bar"></div>
+        </div>
+        <span id="scratch-progress-label">0%</span>
+      </div>
+
+      <div class="scratch-actions">
+        <button id="reveal-btn">⚡ 一鍵全刮</button>
+        <button id="back-btn">← 返回商店</button>
+      </div>
     </section>
 
+    <!-- History -->
     <section id="history-area">
-      <h2>紀錄</h2>
+      <h2>購買紀錄</h2>
       <ul id="history-list">
         <li class="history-empty">尚無購買記錄</li>
       </ul>
     </section>
 
+    <!-- Modal -->
     <div id="overlay" class="hidden">
       <div id="modal">
         <div id="modal-emoji"></div>

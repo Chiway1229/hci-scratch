@@ -1,188 +1,446 @@
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+
 const CARD_TYPES = {
   cheap: {
-    cost: 50,
-    label: '基本款',
-    minReward: -100,
-    maxReward: 300,
+    cost: 50, label: '基本款', icon: '🎟️',
     weights: [
-      { outcome: 'lose',   range: [-100, -10], prob: 0.35 },
-      { outcome: 'zero',   range: [0,   0],    prob: 0.30 },
-      { outcome: 'small',  range: [10,  100],  prob: 0.25 },
-      { outcome: 'big',    range: [101, 300],  prob: 0.10 },
+      { outcome: 'lose',  range: [-100, -10], prob: 0.35 },
+      { outcome: 'zero',  range: [0,   0],    prob: 0.30 },
+      { outcome: 'small', range: [10,  100],  prob: 0.25 },
+      { outcome: 'big',   range: [101, 300],  prob: 0.10 },
     ],
   },
   mid: {
-    cost: 150,
-    label: '進階款',
-    minReward: -200,
-    maxReward: 800,
+    cost: 150, label: '進階款', icon: '🎫',
     weights: [
-      { outcome: 'lose',   range: [-200, -20], prob: 0.35 },
-      { outcome: 'zero',   range: [0,   0],    prob: 0.25 },
-      { outcome: 'small',  range: [20,  300],  prob: 0.28 },
-      { outcome: 'big',    range: [301, 800],  prob: 0.12 },
+      { outcome: 'lose',  range: [-200, -20], prob: 0.35 },
+      { outcome: 'zero',  range: [0,   0],    prob: 0.25 },
+      { outcome: 'small', range: [20,  300],  prob: 0.28 },
+      { outcome: 'big',   range: [301, 800],  prob: 0.12 },
     ],
   },
   premium: {
-    cost: 500,
-    label: '豪華款',
-    minReward: -500,
-    maxReward: 3000,
+    cost: 500, label: '豪華款', icon: '💎',
     weights: [
-      { outcome: 'lose',   range: [-500, -50], prob: 0.38 },
-      { outcome: 'zero',   range: [0,   0],    prob: 0.20 },
-      { outcome: 'small',  range: [50,  800],  prob: 0.28 },
-      { outcome: 'big',    range: [801, 3000], prob: 0.14 },
+      { outcome: 'lose',  range: [-500, -50], prob: 0.38 },
+      { outcome: 'zero',  range: [0,   0],    prob: 0.20 },
+      { outcome: 'small', range: [50,  800],  prob: 0.28 },
+      { outcome: 'big',   range: [801, 3000], prob: 0.14 },
     ],
   },
 };
 
-const CARD_BG = {
-  cheap:   '#2d6a4f',
-  mid:     '#1d3557',
-  premium: '#6d2b8f',
+const OUTCOME_CFG = {
+  lose:  { label: '扣錢！', symbols: ['💸', '📉', '💀'], glow: '#f87171', amtClass: 'amount-lose' },
+  zero:  { label: '沒中獎', symbols: ['😐', '🎲', '😑'], glow: '#94a3b8', amtClass: 'amount-zero' },
+  small: { label: '中獎！', symbols: ['⭐', '💰', '✨'], glow: '#4ade80', amtClass: 'amount-win'  },
+  big:   { label: '大獎！', symbols: ['🏆', '👑', '💎'], glow: '#fbbf24', amtClass: 'amount-win'  },
 };
 
-const RESULT_DISPLAY = {
-  lose:  { emoji: '😱', text: '扣錢！' },
-  zero:  { emoji: '😐', text: '沒中獎' },
-  small: { emoji: '🎉', text: '中獎！' },
-  big:   { emoji: '🏆', text: '大獎！' },
+// ── AUDIO ────────────────────────────────────────────────────────────────────
+
+const SFX = {
+  enabled: true,
+  _ctx: null,
+  _scratchThrottle: false,
+
+  _getCtx() {
+    try {
+      if (!this._ctx)
+        this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+      return this._ctx;
+    } catch { return null; }
+  },
+
+  resume() {
+    const c = this._getCtx();
+    if (c?.state === 'suspended') c.resume();
+  },
+
+  _tone(freq, type, delay, dur, vol = 0.28) {
+    if (!this.enabled) return;
+    const c = this._getCtx();
+    if (!c) return;
+    const osc = c.createOscillator();
+    const env = c.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    env.gain.setValueAtTime(0, c.currentTime + delay);
+    env.gain.linearRampToValueAtTime(vol, c.currentTime + delay + 0.012);
+    env.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+    osc.connect(env);
+    env.connect(c.destination);
+    osc.start(c.currentTime + delay);
+    osc.stop(c.currentTime + delay + dur + 0.05);
+  },
+
+  _noise(dur, freq = 1400, vol = 0.1) {
+    if (!this.enabled) return;
+    const c = this._getCtx();
+    if (!c) return;
+    const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const flt = c.createBiquadFilter();
+    flt.type = 'bandpass';
+    flt.frequency.value = freq;
+    flt.Q.value = 1.2;
+    const env = c.createGain();
+    env.gain.setValueAtTime(vol, c.currentTime);
+    env.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+    src.connect(flt);
+    flt.connect(env);
+    env.connect(c.destination);
+    src.start();
+    src.stop(c.currentTime + dur);
+  },
+
+  scratch() {
+    if (this._scratchThrottle) return;
+    this._noise(0.055, 1600, 0.07);
+    this._scratchThrottle = true;
+    setTimeout(() => { this._scratchThrottle = false; }, 55);
+  },
+
+  buy() {
+    this._tone(880,  'sine', 0,    0.07, 0.2);
+    this._tone(1320, 'sine', 0.07, 0.09, 0.14);
+  },
+
+  reveal() {
+    this._noise(0.18, 2200, 0.14);
+    this._tone(900, 'sine', 0.1, 0.2, 0.09);
+  },
+
+  win() {
+    [261.63, 329.63, 392, 523.25].forEach((f, i) =>
+      this._tone(f, 'sine', i * 0.09, 0.38, 0.22)
+    );
+  },
+
+  bigWin() {
+    [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
+      this._tone(f, 'triangle', i * 0.07, 0.55, 0.26)
+    );
+    [261.63, 329.63, 392, 523.25].forEach(f =>
+      this._tone(f, 'sine', 0.62, 1.2, 0.16)
+    );
+  },
+
+  lose() {
+    [392, 349.23, 293.66, 220].forEach((f, i) =>
+      this._tone(f, 'sawtooth', i * 0.1, 0.2, 0.13)
+    );
+  },
+
+  bankrupt() {
+    const c = this._getCtx();
+    if (!c) return;
+    const osc = c.createOscillator();
+    const env = c.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(380, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(25, c.currentTime + 2.4);
+    env.gain.setValueAtTime(0.28, c.currentTime);
+    env.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 2.4);
+    osc.connect(env);
+    env.connect(c.destination);
+    osc.start();
+    osc.stop(c.currentTime + 2.5);
+  },
 };
+
+// ── PARTICLES ────────────────────────────────────────────────────────────────
+
+const Particles = {
+  canvas: null, ctx: null, list: [], raf: null,
+
+  init() {
+    this.canvas = document.getElementById('particle-canvas');
+    this.ctx = this.canvas.getContext('2d');
+    this._resize();
+    window.addEventListener('resize', () => this._resize());
+  },
+
+  _resize() {
+    this.canvas.width  = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  },
+
+  emit(type, x, y) {
+    const counts = { bigWin: 110, win: 50, buy: 12 };
+    const n = counts[type] ?? 20;
+    for (let i = 0; i < n; i++) this.list.push(this._make(type, x, y));
+    if (!this.raf) this._loop();
+  },
+
+  _make(type, x, y) {
+    const angle = Math.random() * Math.PI * 2;
+    const spd = type === 'bigWin' ? 5 + Math.random() * 11 : 2 + Math.random() * 7;
+    const PALETTES = {
+      bigWin: ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bff','#ffffff','#f59e0b'],
+      win:    ['#ffd700','#ffec8b','#fff8dc','#f59e0b','#fbbf24'],
+      buy:    ['#a78bfa','#818cf8','#c4b5fd'],
+    };
+    const pal = PALETTES[type] ?? PALETTES.win;
+    return {
+      x, y,
+      vx: Math.cos(angle) * spd,
+      vy: Math.sin(angle) * spd - (type === 'bigWin' ? 7 : 3.5),
+      size: type === 'bigWin' ? 5 + Math.random() * 11 : 4 + Math.random() * 8,
+      color: pal[Math.floor(Math.random() * pal.length)],
+      life: 1,
+      decay: 0.013 + Math.random() * 0.022,
+      rot: Math.random() * Math.PI * 2,
+      rotSpd: (Math.random() - 0.5) * 0.22,
+      shape: type === 'bigWin' ? (Math.random() > 0.45 ? 'rect' : 'circle') : 'circle',
+    };
+  },
+
+  _loop() {
+    this.raf = requestAnimationFrame(() => this._loop());
+    const { ctx, canvas } = this;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    this.list = this.list.filter(p => p.life > 0.02);
+    if (!this.list.length) {
+      cancelAnimationFrame(this.raf);
+      this.raf = null;
+      return;
+    }
+
+    for (const p of this.list) {
+      p.x  += p.vx;
+      p.y  += p.vy;
+      p.vy += 0.22;
+      p.vx *= 0.99;
+      p.life -= p.decay;
+      p.rot  += p.rotSpd;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+
+      if (p.shape === 'rect') {
+        ctx.fillRect(-p.size / 2, -p.size * 0.28, p.size, p.size * 0.56);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  },
+};
+
+// ── STATE ────────────────────────────────────────────────────────────────────
 
 let state = {
   balance: 1000,
   currentCard: null,
-  scratchedPixels: 0,
-  totalPixels: 0,
   revealed: false,
   isDrawing: false,
+  balanceAF: null,
+  stats: { games: 0, wins: 0, bestWin: 0 },
 };
 
-// DOM refs
-const balanceEl     = document.getElementById('balance');
-const shopSection   = document.getElementById('shop');
-const scratchSection = document.getElementById('scratch-area');
-const historyList   = document.getElementById('history-list');
-const overlay       = document.getElementById('overlay');
-const canvas        = document.getElementById('scratch-canvas');
-const cardResult    = document.getElementById('card-result');
-const ctx           = canvas.getContext('2d');
+// ── DOM REFS ─────────────────────────────────────────────────────────────────
 
-function updateBalance() {
-  balanceEl.textContent = state.balance.toLocaleString();
+const $balance     = document.getElementById('balance');
+const $shop        = document.getElementById('shop');
+const $scratchArea = document.getElementById('scratch-area');
+const $historyList = document.getElementById('history-list');
+const $overlay     = document.getElementById('overlay');
+const $canvas      = document.getElementById('scratch-canvas');
+const $cardResult  = document.getElementById('card-result');
+const $progressBar = document.getElementById('scratch-progress-bar');
+const $progressLbl = document.getElementById('scratch-progress-label');
+const $statsGames  = document.getElementById('stat-games');
+const $statsWR     = document.getElementById('stat-winrate');
+const $statsBest   = document.getElementById('stat-best');
+const $statsNet    = document.getElementById('stat-net');
+const $soundBtn    = document.getElementById('sound-toggle');
+const $flash       = document.getElementById('flash-overlay');
+const $shine       = document.querySelector('.card-shine');
+const ctx          = $canvas.getContext('2d');
+
+// ── BALANCE ANIMATION ────────────────────────────────────────────────────────
+
+function animateBalance(from, to) {
+  if (state.balanceAF) cancelAnimationFrame(state.balanceAF);
+  const dur   = Math.min(700, 200 + Math.abs(to - from) * 0.4);
+  const start = performance.now();
+  const delta = to - from;
+
+  $balance.className = delta > 0 ? 'up' : delta < 0 ? 'down' : '';
+
+  function tick(now) {
+    const t    = Math.min((now - start) / dur, 1);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    $balance.textContent = Math.round(from + delta * ease).toLocaleString();
+    if (t < 1) {
+      state.balanceAF = requestAnimationFrame(tick);
+    } else {
+      $balance.textContent = to.toLocaleString();
+      $balance.className = '';
+    }
+  }
+  state.balanceAF = requestAnimationFrame(tick);
 }
+
+// ── SCREEN EFFECTS ───────────────────────────────────────────────────────────
+
+function flash(color) {
+  $flash.style.background = color;
+  $flash.classList.add('active');
+  setTimeout(() => $flash.classList.remove('active'), 60);
+}
+
+function shakeCard() {
+  $cardResult.classList.remove('shake');
+  void $cardResult.offsetWidth;
+  $cardResult.classList.add('shake');
+}
+
+// ── STATS ────────────────────────────────────────────────────────────────────
+
+function updateStats() {
+  const s = state.stats;
+  $statsGames.textContent = s.games;
+  $statsWR.textContent    = s.games ? `${Math.round(s.wins / s.games * 100)}%` : '—';
+  $statsBest.textContent  = s.bestWin ? `+${s.bestWin}` : '—';
+  const net = state.balance - 1000;
+  $statsNet.textContent   = net >= 0 ? `+${net}` : `${net}`;
+  $statsNet.className     = `stat-val ${net >= 0 ? 'green' : 'red'}`;
+}
+
+// ── GAME LOGIC ───────────────────────────────────────────────────────────────
 
 function rollResult(type) {
   const cfg = CARD_TYPES[type];
-  const r = Math.random();
-  let cumulative = 0;
-  let chosen = cfg.weights[cfg.weights.length - 1];
+  const r   = Math.random();
+  let cum = 0, chosen = cfg.weights[cfg.weights.length - 1];
   for (const w of cfg.weights) {
-    cumulative += w.prob;
-    if (r < cumulative) { chosen = w; break; }
+    cum += w.prob;
+    if (r < cum) { chosen = w; break; }
   }
-  if (chosen.outcome === 'zero') return 0;
+  if (chosen.outcome === 'zero') return { outcome: 'zero', amount: 0 };
   const [min, max] = chosen.range;
-  return Math.round(min + Math.random() * (max - min));
+  return { outcome: chosen.outcome, amount: Math.round(min + Math.random() * (max - min)) };
 }
 
 function buyCard(type) {
+  SFX.resume();
   const cfg = CARD_TYPES[type];
   if (state.balance < cfg.cost) {
-    showModal('💸', '籌碼不足', `你需要 ${cfg.cost} 籌碼才能購買「${cfg.label}」！`);
+    showModal('💸', '籌碼不足', `需要 ${cfg.cost} 籌碼才能購買「${cfg.label}」！`);
     return;
   }
+
+  const prev = state.balance;
   state.balance -= cfg.cost;
-  updateBalance();
+  animateBalance(prev, state.balance);
+  SFX.buy();
 
-  const reward = rollResult(type);
-  state.currentCard = { type, reward };
-  state.revealed = false;
-  state.scratchedPixels = 0;
+  const btn = document.querySelector(`.buy-btn[data-type="${type}"]`);
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    Particles.emit('buy', r.left + r.width / 2, r.top + r.height / 2);
+  }
 
-  showScratchArea(type, reward);
+  const { outcome, amount } = rollResult(type);
+  state.currentCard = { type, outcome, amount };
+  state.revealed    = false;
+
+  showScratchArea(type, outcome, amount);
 }
 
-function showScratchArea(type, reward) {
-  shopSection.classList.add('hidden');
-  scratchSection.classList.remove('hidden');
-  cardResult.classList.add('hidden');
+function showScratchArea(type, outcome, amount) {
+  $shop.classList.add('hidden');
+  $scratchArea.classList.remove('hidden');
+  $cardResult.classList.add('hidden');
+  $cardResult.style.boxShadow = '';
+  $cardResult.classList.remove('shake');
+  $progressBar.style.width = '0%';
+  $progressLbl.textContent  = '0%';
+  $shine.classList.remove('hidden');
 
-  const W = canvas.parentElement.clientWidth;
-  const H = Math.round(W * 0.5);
-  canvas.width  = W;
-  canvas.height = H;
-  state.totalPixels = W * H;
+  const oc = OUTCOME_CFG[outcome];
 
-  // Draw background (hidden prize layer)
-  const resultEl    = document.getElementById('card-result');
-  const bg = CARD_BG[type] || '#333';
-  resultEl.style.background = bg;
-  renderPrizeLayer(reward);
-  cardResult.classList.remove('hidden');
+  $cardResult.style.background = {
+    cheap: 'linear-gradient(135deg,#1b4332,#2d6a4f)',
+    mid:   'linear-gradient(135deg,#0a1628,#1d3557)',
+    premium: 'linear-gradient(135deg,#3b0764,#6d2b8f)',
+  }[type];
 
-  // Draw scratch layer on canvas
-  ctx.clearRect(0, 0, W, H);
+  const syms = $cardResult.querySelectorAll('.prize-symbol');
+  oc.symbols.forEach((s, i) => { if (syms[i]) syms[i].textContent = s; });
+
+  document.getElementById('result-text').textContent   = oc.label;
+  const $amt = document.getElementById('result-amount');
+  $amt.textContent  = amount > 0 ? `+${amount} 籌碼` : amount < 0 ? `${amount} 籌碼` : '無獎勵';
+  $amt.className    = oc.amtClass;
+
+  $cardResult.classList.remove('hidden');
+  initScratchCanvas();
+}
+
+function initScratchCanvas() {
+  const W = $canvas.parentElement.clientWidth;
+  const H = Math.round(W * 0.54);
+  $canvas.width  = W;
+  $canvas.height = H;
+
+  // Metallic base gradient
   const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#888');
-  grad.addColorStop(1, '#aaa');
+  grad.addColorStop(0,   '#8e8e8e');
+  grad.addColorStop(0.28,'#d8d8d8');
+  grad.addColorStop(0.5, '#b0b0b0');
+  grad.addColorStop(0.72,'#d8d8d8');
+  grad.addColorStop(1,   '#8e8e8e');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Pattern text
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = '#fff';
-  ctx.font = `${Math.round(W * 0.035)}px sans-serif`;
-  for (let y = 20; y < H; y += 30) {
-    for (let x = 0; x < W; x += 80) {
-      ctx.fillText('刮刮樂 ✨', x + (y % 60 === 20 ? 0 : 40), y);
-    }
-  }
+  // Subtle noise texture
+  ctx.globalAlpha = 0.035;
+  for (let y = 0; y < H; y += 2)
+    for (let x = 0; x < W; x += 2)
+      if (Math.random() > 0.5) { ctx.fillStyle = '#000'; ctx.fillRect(x, y, 2, 2); }
   ctx.globalAlpha = 1;
 
-  // Instruction text
-  ctx.fillStyle = '#555';
-  ctx.font = `bold ${Math.round(W * 0.055)}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.fillText('用手指刮開！', W / 2, H / 2);
-  ctx.textAlign = 'left';
+  // Repeating watermark
+  ctx.globalAlpha = 0.11;
+  ctx.fillStyle   = '#444';
+  ctx.font        = `${Math.max(10, Math.round(W * 0.031))}px sans-serif`;
+  for (let y = 22; y < H; y += 28)
+    for (let x = 0; x < W; x += 96)
+      ctx.fillText('✨ 刮刮樂 ✨', x + (y % 56 === 22 ? 0 : 48), y);
+  ctx.globalAlpha = 1;
+
+  // Center label
+  ctx.fillStyle   = 'rgba(50,50,50,0.65)';
+  ctx.font        = `bold ${Math.round(W * 0.05)}px sans-serif`;
+  ctx.textAlign   = 'center';
+  ctx.fillText('✦ 刮開看看 ✦', W / 2, H / 2);
+  ctx.font        = `${Math.round(W * 0.033)}px sans-serif`;
+  ctx.fillStyle   = 'rgba(50,50,50,0.45)';
+  ctx.fillText('用手指或滑鼠刮除', W / 2, H / 2 + Math.round(W * 0.06));
+  ctx.textAlign   = 'left';
 
   attachScratchEvents();
 }
 
-function renderPrizeLayer(reward) {
-  const type = state.currentCard.type;
-  let outcome;
-  if (reward < 0)       outcome = 'lose';
-  else if (reward === 0) outcome = 'zero';
-  else if (reward <= (type === 'premium' ? 800 : type === 'mid' ? 300 : 100)) outcome = 'small';
-  else                  outcome = 'big';
-
-  const d = RESULT_DISPLAY[outcome];
-  document.getElementById('result-emoji').textContent = d.emoji;
-  document.getElementById('result-text').textContent  = d.text;
-
-  const amtEl = document.getElementById('result-amount');
-  if (reward > 0) {
-    amtEl.textContent = `+${reward} 籌碼`;
-    amtEl.className = 'amount-win';
-  } else if (reward < 0) {
-    amtEl.textContent = `${reward} 籌碼`;
-    amtEl.className = 'amount-lose';
-  } else {
-    amtEl.textContent = `無獎勵`;
-    amtEl.className = 'amount-zero';
-  }
-}
-
-// --- Scratch drawing ---
+// ── SCRATCH LOGIC ────────────────────────────────────────────────────────────
 
 function getScratchPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const src = e.touches ? e.touches[0] : e;
+  const rect   = $canvas.getBoundingClientRect();
+  const scaleX = $canvas.width  / rect.width;
+  const scaleY = $canvas.height / rect.height;
+  const src    = e.touches ? e.touches[0] : e;
   return {
     x: (src.clientX - rect.left) * scaleX,
     y: (src.clientY - rect.top)  * scaleY,
@@ -192,115 +450,182 @@ function getScratchPos(e) {
 function scratchAt(x, y) {
   ctx.globalCompositeOperation = 'destination-out';
   ctx.beginPath();
-  ctx.arc(x, y, 28, 0, Math.PI * 2);
+  ctx.arc(x, y, 30, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalCompositeOperation = 'source-over';
-  checkRevealThreshold();
+  SFX.scratch();
+  updateProgress();
 }
 
-function checkRevealThreshold() {
+function updateProgress() {
   if (state.revealed) return;
-  // Sample every 4th pixel for performance
-  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = ctx.getImageData(0, 0, $canvas.width, $canvas.height).data;
   let transparent = 0;
-  for (let i = 3; i < imageData.data.length; i += 16) {
-    if (imageData.data[i] < 128) transparent++;
-  }
-  const ratio = transparent / (imageData.data.length / 16);
-  if (ratio > 0.55) revealCard();
+  for (let i = 3; i < data.length; i += 16)
+    if (data[i] < 128) transparent++;
+  const pct = transparent / (data.length / 16);
+  const display = Math.min(Math.round(pct * 100), 100);
+  $progressBar.style.width    = `${display}%`;
+  $progressLbl.textContent    = `${display}%`;
+  if (pct > 0.55) revealCard();
 }
 
 function revealCard() {
   if (state.revealed) return;
   state.revealed = true;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  SFX.reveal();
+  ctx.clearRect(0, 0, $canvas.width, $canvas.height);
+  $progressBar.style.width  = '100%';
+  $progressLbl.textContent  = '100%';
+  $shine.classList.add('hidden');
+
+  const oc = OUTCOME_CFG[state.currentCard.outcome];
+  $cardResult.style.transition = 'box-shadow 0.5s ease';
+  $cardResult.style.boxShadow  = `0 0 40px ${oc.glow}, 0 0 80px ${oc.glow}50`;
+
   applyReward();
 }
 
-function attachScratchEvents() {
-  canvas.onmousedown = (e) => { state.isDrawing = true; scratchAt(...Object.values(getScratchPos(e))); };
-  canvas.onmousemove = (e) => { if (state.isDrawing) scratchAt(...Object.values(getScratchPos(e))); };
-  canvas.onmouseup   = () => { state.isDrawing = false; };
-  canvas.onmouseleave = () => { state.isDrawing = false; };
-
-  canvas.ontouchstart = (e) => { e.preventDefault(); state.isDrawing = true; scratchAt(...Object.values(getScratchPos(e))); };
-  canvas.ontouchmove  = (e) => { e.preventDefault(); if (state.isDrawing) scratchAt(...Object.values(getScratchPos(e))); };
-  canvas.ontouchend   = () => { state.isDrawing = false; };
-}
-
 function applyReward() {
-  const { type, reward } = state.currentCard;
-  const cfg = CARD_TYPES[type];
-  state.balance += reward;
-  if (state.balance < 0) state.balance = 0;
-  updateBalance();
-  addHistory(type, reward);
+  const { type, outcome, amount } = state.currentCard;
+
+  const prev = state.balance;
+  state.balance = Math.max(0, state.balance + amount);
+  animateBalance(prev, state.balance);
+
+  state.stats.games++;
+  if (amount > 0) {
+    state.stats.wins++;
+    if (amount > state.stats.bestWin) state.stats.bestWin = amount;
+  }
+
+  updateStats();
+  addHistory(type, outcome, amount);
+  triggerEffects(outcome);
 
   if (state.balance === 0) {
-    setTimeout(() => showModal('💔', '破產了！', '你的籌碼全部用完，遊戲結束。\n點擊繼續將重置遊戲。', true), 600);
+    setTimeout(() => {
+      SFX.bankrupt();
+      showModal('💔', '破產了！', '籌碼全部用完，遊戲結束。\n點擊繼續將重置遊戲。', true);
+    }, 900);
   }
 }
 
-function addHistory(type, reward) {
-  const cfg = CARD_TYPES[type];
-  const empty = historyList.querySelector('.history-empty');
+function triggerEffects(outcome) {
+  const rect = $canvas.getBoundingClientRect();
+  const cx = rect.left + rect.width  / 2;
+  const cy = rect.top  + rect.height / 2;
+
+  switch (outcome) {
+    case 'big':
+      SFX.bigWin();
+      flash('rgba(255,215,0,0.22)');
+      Particles.emit('bigWin', cx, cy);
+      break;
+    case 'small':
+      SFX.win();
+      flash('rgba(74,222,128,0.18)');
+      Particles.emit('win', cx, cy);
+      break;
+    case 'lose':
+      SFX.lose();
+      flash('rgba(248,113,113,0.18)');
+      shakeCard();
+      break;
+  }
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────────────
+
+function addHistory(type, outcome, amount) {
+  const cfg  = CARD_TYPES[type];
+  const oc   = OUTCOME_CFG[outcome];
+  const empty = $historyList.querySelector('.history-empty');
   if (empty) empty.remove();
 
-  const li = document.createElement('li');
-  let outcomeClass = reward > 0 ? 'win' : reward < 0 ? 'lose' : 'zero';
-  li.className = `history-item ${outcomeClass}`;
+  const li  = document.createElement('li');
+  const cls = amount > 0 ? 'win' : amount < 0 ? 'lose' : 'zero';
+  li.className = `history-item ${cls}`;
 
   const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  const t   = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  const amt = amount > 0 ? `+${amount}` : `${amount}`;
 
-  const amtStr = reward > 0 ? `+${reward}` : `${reward}`;
   li.innerHTML = `
-    <span>${cfg.label}</span>
-    <span class="h-amount ${outcomeClass}">${amtStr} 籌碼</span>
-    <span class="h-time">${timeStr}</span>
+    <span class="h-icon">${cfg.icon}</span>
+    <span class="h-label">${cfg.label}</span>
+    <span class="h-outcome">${oc.symbols[0]}</span>
+    <span class="h-amount ${cls}">${amt}</span>
+    <span class="h-time">${t}</span>
   `;
-  historyList.prepend(li);
+  $historyList.prepend(li);
 }
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
 
 function showModal(emoji, title, msg, isGameOver = false) {
   document.getElementById('modal-emoji').textContent = emoji;
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-msg').textContent   = msg;
-  overlay.classList.remove('hidden');
-
+  $overlay.classList.remove('hidden');
   document.getElementById('modal-close').onclick = () => {
-    overlay.classList.add('hidden');
+    $overlay.classList.add('hidden');
     if (isGameOver) resetGame();
   };
 }
 
 function resetGame() {
-  state.balance = 1000;
-  state.currentCard = null;
-  state.revealed = false;
-  updateBalance();
-  historyList.innerHTML = '<li class="history-empty">尚無購買記錄</li>';
-  scratchSection.classList.add('hidden');
-  shopSection.classList.remove('hidden');
+  const prev = state.balance;
+  state = {
+    balance: 1000, currentCard: null,
+    revealed: false, isDrawing: false,
+    balanceAF: null,
+    stats: { games: 0, wins: 0, bestWin: 0 },
+  };
+  animateBalance(prev, 1000);
+  updateStats();
+  $historyList.innerHTML = '<li class="history-empty">尚無購買記錄</li>';
+  $scratchArea.classList.add('hidden');
+  $shop.classList.remove('hidden');
 }
 
-// --- Button events ---
+// ── EVENTS ───────────────────────────────────────────────────────────────────
 
-document.querySelectorAll('.buy-btn').forEach(btn => {
-  btn.addEventListener('click', () => buyCard(btn.dataset.type));
-});
+function attachScratchEvents() {
+  $canvas.onmousedown  = (e) => { state.isDrawing = true;  const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  $canvas.onmousemove  = (e) => { if (!state.isDrawing) return; const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  $canvas.onmouseup    = () => { state.isDrawing = false; };
+  $canvas.onmouseleave = () => { state.isDrawing = false; };
+  $canvas.ontouchstart = (e) => { e.preventDefault(); state.isDrawing = true;  const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  $canvas.ontouchmove  = (e) => { e.preventDefault(); if (!state.isDrawing) return; const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  $canvas.ontouchend   = () => { state.isDrawing = false; };
+}
+
+document.querySelectorAll('.buy-btn').forEach(btn =>
+  btn.addEventListener('click', () => buyCard(btn.dataset.type))
+);
 
 document.getElementById('reveal-btn').addEventListener('click', () => {
+  SFX.resume();
   if (!state.revealed) revealCard();
 });
 
 document.getElementById('back-btn').addEventListener('click', () => {
-  scratchSection.classList.add('hidden');
-  shopSection.classList.remove('hidden');
-  if (!state.revealed && state.currentCard) {
-    // Penalize for abandoning unscratched card (reward already lost via cost)
-    applyReward();
-  }
+  $scratchArea.classList.add('hidden');
+  $shop.classList.remove('hidden');
+  if (!state.revealed && state.currentCard) applyReward();
 });
 
-updateBalance();
+$soundBtn.addEventListener('click', () => {
+  SFX.resume();
+  SFX.enabled = !SFX.enabled;
+  $soundBtn.textContent = SFX.enabled ? '🔊' : '🔇';
+  $soundBtn.title       = SFX.enabled ? '關閉音效' : '開啟音效';
+});
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+
+Particles.init();
+animateBalance(0, state.balance);
+updateStats();
