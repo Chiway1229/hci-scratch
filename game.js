@@ -37,6 +37,24 @@ const OUTCOME_CFG = {
   big:   { label: '大獎！', symbols: ['🏆', '👑', '💎'], glow: '#fbbf24', amtClass: 'amount-win'  },
 };
 
+// Upgrades — Cookie Clicker style with 1.15x cost growth per purchase
+const UPGRADES = [
+  // Click upgrades — boost manual dishwashing earnings
+  { key: 'gloves',  name: '橡膠手套',     icon: '🧤', baseCost: 100,    effect: 1,   type: 'click' },
+  { key: 'soap',    name: '高效洗碗精',   icon: '🧴', baseCost: 500,    effect: 4,   type: 'click' },
+  { key: 'sprayer', name: '高壓水槍',     icon: '💦', baseCost: 2500,   effect: 15,  type: 'click' },
+  { key: 'license', name: '洗碗大師證照', icon: '📜', baseCost: 15000,  effect: 80,  type: 'click' },
+
+  // Auto upgrades — passive income per second
+  { key: 'dishwasher', name: '家用洗碗機',  icon: '🍽️', baseCost: 800,    effect: 2,   type: 'auto' },
+  { key: 'robot',      name: '洗碗機器人',  icon: '🤖', baseCost: 5000,   effect: 12,  type: 'auto' },
+  { key: 'ai',         name: 'AI 廚房系統', icon: '🧠', baseCost: 30000,  effect: 60,  type: 'auto' },
+  { key: 'chain',      name: '連鎖餐廳',    icon: '🏪', baseCost: 200000, effect: 350, type: 'auto' },
+];
+
+const COST_GROWTH = 1.15;
+const upgradeCost = (u, owned) => Math.ceil(u.baseCost * Math.pow(COST_GROWTH, owned));
+
 // ── AUDIO ────────────────────────────────────────────────────────────────────
 
 const SFX = {
@@ -109,6 +127,18 @@ const SFX = {
     this._tone(1320, 'sine', 0.07, 0.09, 0.14);
   },
 
+  wash() {
+    // Quick bubbly "splash" tone
+    this._noise(0.08, 3200, 0.06);
+    this._tone(660, 'sine', 0, 0.06, 0.1);
+  },
+
+  upgrade() {
+    [523.25, 659.25, 783.99].forEach((f, i) =>
+      this._tone(f, 'triangle', i * 0.05, 0.18, 0.18)
+    );
+  },
+
   reveal() {
     this._noise(0.18, 2200, 0.14);
     this._tone(900, 'sine', 0.1, 0.2, 0.09);
@@ -170,7 +200,7 @@ const Particles = {
   },
 
   emit(type, x, y) {
-    const counts = { bigWin: 110, win: 50, buy: 12 };
+    const counts = { bigWin: 110, win: 50, buy: 12, wash: 8, upgrade: 24 };
     const n = counts[type] ?? 20;
     for (let i = 0; i < n; i++) this.list.push(this._make(type, x, y));
     if (!this.raf) this._loop();
@@ -178,21 +208,27 @@ const Particles = {
 
   _make(type, x, y) {
     const angle = Math.random() * Math.PI * 2;
-    const spd = type === 'bigWin' ? 5 + Math.random() * 11 : 2 + Math.random() * 7;
+    const spd = type === 'bigWin' ? 5 + Math.random() * 11
+              : type === 'wash'   ? 1 + Math.random() * 3
+              : 2 + Math.random() * 7;
     const PALETTES = {
-      bigWin: ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bff','#ffffff','#f59e0b'],
-      win:    ['#ffd700','#ffec8b','#fff8dc','#f59e0b','#fbbf24'],
-      buy:    ['#a78bfa','#818cf8','#c4b5fd'],
+      bigWin:  ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bff','#ffffff','#f59e0b'],
+      win:     ['#ffd700','#ffec8b','#fff8dc','#f59e0b','#fbbf24'],
+      buy:     ['#a78bfa','#818cf8','#c4b5fd'],
+      wash:    ['#67e8f9','#a5f3fc','#ffffff','#cffafe','#0891b2'],
+      upgrade: ['#34d399','#6ee7b7','#a7f3d0','#10b981'],
     };
     const pal = PALETTES[type] ?? PALETTES.win;
     return {
       x, y,
       vx: Math.cos(angle) * spd,
-      vy: Math.sin(angle) * spd - (type === 'bigWin' ? 7 : 3.5),
-      size: type === 'bigWin' ? 5 + Math.random() * 11 : 4 + Math.random() * 8,
+      vy: Math.sin(angle) * spd - (type === 'bigWin' ? 7 : type === 'wash' ? 2 : 3.5),
+      size: type === 'bigWin' ? 5 + Math.random() * 11
+          : type === 'wash'   ? 3 + Math.random() * 6
+          : 4 + Math.random() * 8,
       color: pal[Math.floor(Math.random() * pal.length)],
       life: 1,
-      decay: 0.013 + Math.random() * 0.022,
+      decay: type === 'wash' ? 0.025 + Math.random() * 0.02 : 0.013 + Math.random() * 0.022,
       rot: Math.random() * Math.PI * 2,
       rotSpd: (Math.random() - 0.5) * 0.22,
       shape: type === 'bigWin' ? (Math.random() > 0.45 ? 'rect' : 'circle') : 'circle',
@@ -246,27 +282,42 @@ let state = {
   isDrawing: false,
   balanceAF: null,
   stats: { games: 0, wins: 0, bestWin: 0 },
+  job: {
+    upgrades: {},      // { gloves: 3, dishwasher: 2, ... }
+    clickPower: 1,     // per-click earnings (auto-derived)
+    autoIncome: 0,     // per-second earnings (auto-derived)
+    totalWashed: 0,    // lifetime dishes washed
+    bankruptShown: false,
+  },
+  activeTab: 'shop',
 };
 
 // ── DOM REFS ─────────────────────────────────────────────────────────────────
 
-const $balance     = document.getElementById('balance');
-const $shop        = document.getElementById('shop');
-const $scratchArea = document.getElementById('scratch-area');
-const $historyList = document.getElementById('history-list');
-const $overlay     = document.getElementById('overlay');
-const $canvas      = document.getElementById('scratch-canvas');
-const $cardResult  = document.getElementById('card-result');
-const $progressBar = document.getElementById('scratch-progress-bar');
-const $progressLbl = document.getElementById('scratch-progress-label');
-const $statsGames  = document.getElementById('stat-games');
-const $statsWR     = document.getElementById('stat-winrate');
-const $statsBest   = document.getElementById('stat-best');
-const $statsNet    = document.getElementById('stat-net');
-const $soundBtn    = document.getElementById('sound-toggle');
-const $flash       = document.getElementById('flash-overlay');
-const $shine       = document.querySelector('.card-shine');
-const ctx          = $canvas.getContext('2d');
+const $balance      = document.getElementById('balance');
+const $shop         = document.getElementById('shop');
+const $jobCenter    = document.getElementById('job-center');
+const $scratchArea  = document.getElementById('scratch-area');
+const $historyList  = document.getElementById('history-list');
+const $overlay      = document.getElementById('overlay');
+const $canvas       = document.getElementById('scratch-canvas');
+const $cardResult   = document.getElementById('card-result');
+const $progressBar  = document.getElementById('scratch-progress-bar');
+const $progressLbl  = document.getElementById('scratch-progress-label');
+const $statsGames   = document.getElementById('stat-games');
+const $statsWR      = document.getElementById('stat-winrate');
+const $statsBest    = document.getElementById('stat-best');
+const $statsNet     = document.getElementById('stat-net');
+const $soundBtn     = document.getElementById('sound-toggle');
+const $flash        = document.getElementById('flash-overlay');
+const $shine        = document.querySelector('.card-shine');
+const $tabs         = document.getElementById('tabs');
+const $washBtn      = document.getElementById('wash-btn');
+const $washEarn     = document.getElementById('wash-earn');
+const $jobClickP    = document.getElementById('job-click-power');
+const $jobAutoIncome = document.getElementById('job-auto-income');
+const $upgradesList = document.getElementById('upgrades-list');
+const ctx           = $canvas.getContext('2d');
 
 // ── BALANCE ANIMATION ────────────────────────────────────────────────────────
 
@@ -287,9 +338,16 @@ function animateBalance(from, to) {
     } else {
       $balance.textContent = to.toLocaleString();
       $balance.className = '';
+      refreshUpgradeAvailability();
     }
   }
   state.balanceAF = requestAnimationFrame(tick);
+}
+
+function setBalanceInstant(v) {
+  state.balance = v;
+  $balance.textContent = v.toLocaleString();
+  refreshUpgradeAvailability();
 }
 
 // ── SCREEN EFFECTS ───────────────────────────────────────────────────────────
@@ -306,6 +364,18 @@ function shakeCard() {
   $cardResult.classList.add('shake');
 }
 
+function showFloatingText(text, anchor, color = '#67e8f9') {
+  const rect = anchor.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'float-text';
+  el.textContent = text;
+  el.style.color = color;
+  el.style.left = `${rect.left + rect.width / 2}px`;
+  el.style.top  = `${rect.top + 12}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
 // ── STATS ────────────────────────────────────────────────────────────────────
 
 function updateStats() {
@@ -316,6 +386,138 @@ function updateStats() {
   const net = state.balance - 1000;
   $statsNet.textContent   = net >= 0 ? `+${net}` : `${net}`;
   $statsNet.className     = `stat-val ${net >= 0 ? 'green' : 'red'}`;
+}
+
+// ── JOB / UPGRADES ───────────────────────────────────────────────────────────
+
+function recalcJobStats() {
+  state.job.clickPower = 1;
+  state.job.autoIncome = 0;
+  for (const [key, count] of Object.entries(state.job.upgrades)) {
+    const u = UPGRADES.find(x => x.key === key);
+    if (!u || !count) continue;
+    if (u.type === 'click') state.job.clickPower += u.effect * count;
+    else                    state.job.autoIncome += u.effect * count;
+  }
+  $jobClickP.textContent     = `+${state.job.clickPower.toLocaleString()}`;
+  $jobAutoIncome.textContent = `+${state.job.autoIncome.toLocaleString()}/秒`;
+  $washEarn.textContent      = `+${state.job.clickPower.toLocaleString()} 籌碼`;
+}
+
+function renderUpgrades() {
+  $upgradesList.innerHTML = '';
+  for (const u of UPGRADES) {
+    const owned = state.job.upgrades[u.key] || 0;
+    const cost  = upgradeCost(u, owned);
+    const canBuy = state.balance >= cost;
+
+    const row = document.createElement('div');
+    row.className = `upgrade-item ${canBuy ? 'affordable' : ''}`;
+    row.dataset.key = u.key;
+
+    const descClass = u.type === 'click' ? 'click' : 'auto';
+    const descText  = u.type === 'click'
+      ? `每次洗碗 +${u.effect}`
+      : `+${u.effect}/秒（被動）`;
+
+    row.innerHTML = `
+      <div class="up-icon">${u.icon}</div>
+      <div class="up-info">
+        <div class="up-name">${u.name}${owned > 0 ? `<span class="up-count">×${owned}</span>` : ''}</div>
+        <div class="up-desc ${descClass}">${descText}</div>
+      </div>
+      <button class="up-buy" data-key="${u.key}" ${canBuy ? '' : 'disabled'}>
+        ${cost.toLocaleString()}
+      </button>
+    `;
+    $upgradesList.appendChild(row);
+  }
+
+  $upgradesList.querySelectorAll('.up-buy').forEach(btn =>
+    btn.addEventListener('click', () => buyUpgrade(btn.dataset.key))
+  );
+}
+
+function refreshUpgradeAvailability() {
+  $upgradesList.querySelectorAll('.upgrade-item').forEach(row => {
+    const key   = row.dataset.key;
+    const u     = UPGRADES.find(x => x.key === key);
+    const owned = state.job.upgrades[key] || 0;
+    const cost  = upgradeCost(u, owned);
+    const can   = state.balance >= cost;
+    const btn   = row.querySelector('.up-buy');
+    btn.disabled    = !can;
+    btn.textContent = cost.toLocaleString();
+    row.classList.toggle('affordable', can);
+  });
+}
+
+function buyUpgrade(key) {
+  SFX.resume();
+  const u = UPGRADES.find(x => x.key === key);
+  if (!u) return;
+  const owned = state.job.upgrades[key] || 0;
+  const cost  = upgradeCost(u, owned);
+  if (state.balance < cost) {
+    showModal('💸', '籌碼不足', `需要 ${cost.toLocaleString()} 籌碼！`);
+    return;
+  }
+
+  const prev = state.balance;
+  state.balance -= cost;
+  state.job.upgrades[key] = owned + 1;
+
+  animateBalance(prev, state.balance);
+  recalcJobStats();
+  renderUpgrades();
+  SFX.upgrade();
+  updateStats();
+
+  const btn = $upgradesList.querySelector(`.up-buy[data-key="${key}"]`);
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    Particles.emit('upgrade', r.left + r.width / 2, r.top + r.height / 2);
+  }
+}
+
+function washDish() {
+  SFX.resume();
+  const earn = state.job.clickPower;
+  const prev = state.balance;
+  state.balance += earn;
+  state.job.totalWashed++;
+
+  animateBalance(prev, state.balance);
+  updateStats();
+  SFX.wash();
+
+  $washBtn.classList.remove('bounce');
+  void $washBtn.offsetWidth;
+  $washBtn.classList.add('bounce');
+
+  const r = $washBtn.getBoundingClientRect();
+  Particles.emit('wash', r.left + r.width / 2, r.top + r.height * 0.4);
+  showFloatingText(`+${earn}`, $washBtn, '#67e8f9');
+}
+
+// Auto income tick — runs every second
+setInterval(() => {
+  if (state.job.autoIncome <= 0) return;
+  state.balance += state.job.autoIncome;
+  $balance.textContent = state.balance.toLocaleString();
+  refreshUpgradeAvailability();
+  updateStats();
+}, 1000);
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  state.activeTab = name;
+  $tabs.querySelectorAll('.tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === name)
+  );
+  $shop.classList.toggle('hidden', name !== 'shop');
+  $jobCenter.classList.toggle('hidden', name !== 'job');
 }
 
 // ── GAME LOGIC ───────────────────────────────────────────────────────────────
@@ -337,7 +539,7 @@ function buyCard(type) {
   SFX.resume();
   const cfg = CARD_TYPES[type];
   if (state.balance < cfg.cost) {
-    showModal('💸', '籌碼不足', `需要 ${cfg.cost} 籌碼才能購買「${cfg.label}」！`);
+    showModal('💸', '籌碼不足', `需要 ${cfg.cost} 籌碼才能購買「${cfg.label}」！\n試試打工區洗碗賺錢吧！`);
     return;
   }
 
@@ -361,6 +563,8 @@ function buyCard(type) {
 
 function showScratchArea(type, outcome, amount) {
   $shop.classList.add('hidden');
+  $jobCenter.classList.add('hidden');
+  $tabs.classList.add('hidden');
   $scratchArea.classList.remove('hidden');
   $cardResult.classList.add('hidden');
   $cardResult.style.boxShadow = '';
@@ -372,8 +576,8 @@ function showScratchArea(type, outcome, amount) {
   const oc = OUTCOME_CFG[outcome];
 
   $cardResult.style.background = {
-    cheap: 'linear-gradient(135deg,#1b4332,#2d6a4f)',
-    mid:   'linear-gradient(135deg,#0a1628,#1d3557)',
+    cheap:   'linear-gradient(135deg,#1b4332,#2d6a4f)',
+    mid:     'linear-gradient(135deg,#0a1628,#1d3557)',
     premium: 'linear-gradient(135deg,#3b0764,#6d2b8f)',
   }[type];
 
@@ -389,13 +593,18 @@ function showScratchArea(type, outcome, amount) {
   initScratchCanvas();
 }
 
+function exitScratchMode() {
+  $scratchArea.classList.add('hidden');
+  $tabs.classList.remove('hidden');
+  switchTab(state.activeTab);
+}
+
 function initScratchCanvas() {
   const W = $canvas.parentElement.clientWidth;
   const H = Math.round(W * 0.54);
   $canvas.width  = W;
   $canvas.height = H;
 
-  // Metallic base gradient
   const grad = ctx.createLinearGradient(0, 0, W, H);
   grad.addColorStop(0,   '#8e8e8e');
   grad.addColorStop(0.28,'#d8d8d8');
@@ -405,14 +614,12 @@ function initScratchCanvas() {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
-  // Subtle noise texture
   ctx.globalAlpha = 0.035;
   for (let y = 0; y < H; y += 2)
     for (let x = 0; x < W; x += 2)
       if (Math.random() > 0.5) { ctx.fillStyle = '#000'; ctx.fillRect(x, y, 2, 2); }
   ctx.globalAlpha = 1;
 
-  // Repeating watermark
   ctx.globalAlpha = 0.11;
   ctx.fillStyle   = '#444';
   ctx.font        = `${Math.max(10, Math.round(W * 0.031))}px sans-serif`;
@@ -421,7 +628,6 @@ function initScratchCanvas() {
       ctx.fillText('✨ 刮刮樂 ✨', x + (y % 56 === 22 ? 0 : 48), y);
   ctx.globalAlpha = 1;
 
-  // Center label
   ctx.fillStyle   = 'rgba(50,50,50,0.65)';
   ctx.font        = `bold ${Math.round(W * 0.05)}px sans-serif`;
   ctx.textAlign   = 'center';
@@ -465,8 +671,8 @@ function updateProgress() {
     if (data[i] < 128) transparent++;
   const pct = transparent / (data.length / 16);
   const display = Math.min(Math.round(pct * 100), 100);
-  $progressBar.style.width    = `${display}%`;
-  $progressLbl.textContent    = `${display}%`;
+  $progressBar.style.width = `${display}%`;
+  $progressLbl.textContent = `${display}%`;
   if (pct > 0.55) revealCard();
 }
 
@@ -476,8 +682,8 @@ function revealCard() {
 
   SFX.reveal();
   ctx.clearRect(0, 0, $canvas.width, $canvas.height);
-  $progressBar.style.width  = '100%';
-  $progressLbl.textContent  = '100%';
+  $progressBar.style.width = '100%';
+  $progressLbl.textContent = '100%';
   $shine.classList.add('hidden');
 
   const oc = OUTCOME_CFG[state.currentCard.outcome];
@@ -504,10 +710,14 @@ function applyReward() {
   addHistory(type, outcome, amount);
   triggerEffects(outcome);
 
-  if (state.balance === 0) {
+  if (state.balance === 0 && !state.job.bankruptShown) {
+    state.job.bankruptShown = true;
     setTimeout(() => {
       SFX.bankrupt();
-      showModal('💔', '破產了！', '籌碼全部用完，遊戲結束。\n點擊繼續將重置遊戲。', true);
+      showModal(
+        '💔', '破產了！',
+        '別擔心，到「💼 打工」分頁洗碗賺回籌碼吧！'
+      );
     }, 900);
   }
 }
@@ -564,30 +774,14 @@ function addHistory(type, outcome, amount) {
 
 // ── MODAL ────────────────────────────────────────────────────────────────────
 
-function showModal(emoji, title, msg, isGameOver = false) {
+function showModal(emoji, title, msg) {
   document.getElementById('modal-emoji').textContent = emoji;
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-msg').textContent   = msg;
   $overlay.classList.remove('hidden');
   document.getElementById('modal-close').onclick = () => {
     $overlay.classList.add('hidden');
-    if (isGameOver) resetGame();
   };
-}
-
-function resetGame() {
-  const prev = state.balance;
-  state = {
-    balance: 1000, currentCard: null,
-    revealed: false, isDrawing: false,
-    balanceAF: null,
-    stats: { games: 0, wins: 0, bestWin: 0 },
-  };
-  animateBalance(prev, 1000);
-  updateStats();
-  $historyList.innerHTML = '<li class="history-empty">尚無購買記錄</li>';
-  $scratchArea.classList.add('hidden');
-  $shop.classList.remove('hidden');
 }
 
 // ── EVENTS ───────────────────────────────────────────────────────────────────
@@ -612,9 +806,8 @@ document.getElementById('reveal-btn').addEventListener('click', () => {
 });
 
 document.getElementById('back-btn').addEventListener('click', () => {
-  $scratchArea.classList.add('hidden');
-  $shop.classList.remove('hidden');
   if (!state.revealed && state.currentCard) applyReward();
+  exitScratchMode();
 });
 
 $soundBtn.addEventListener('click', () => {
@@ -624,8 +817,18 @@ $soundBtn.addEventListener('click', () => {
   $soundBtn.title       = SFX.enabled ? '關閉音效' : '開啟音效';
 });
 
+$tabs.addEventListener('click', (e) => {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) switchTab(btn.dataset.tab);
+});
+
+$washBtn.addEventListener('click', washDish);
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 Particles.init();
 animateBalance(0, state.balance);
 updateStats();
+recalcJobStats();
+renderUpgrades();
+switchTab('shop');

@@ -43,6 +43,12 @@
       </div>
     </div>
 
+    <!-- Tabs -->
+    <div id="tabs" class="tabs">
+      <button class="tab-btn active" data-tab="shop">🎰 刮刮樂</button>
+      <button class="tab-btn" data-tab="job">💼 打工</button>
+    </div>
+
     <!-- Shop -->
     <section id="shop">
       <h2>選擇票券</h2>
@@ -74,6 +80,32 @@
           </div>
           <button class="buy-btn" data-type="premium">購買</button>
         </div>
+      </div>
+    </section>
+
+    <!-- Job center -->
+    <section id="job-center" class="hidden">
+      <h2>💼 洗碗打工</h2>
+      <div id="job-summary">
+        <div class="job-stat">
+          <span class="job-stat-label">每次洗碗</span>
+          <span class="job-stat-val" id="job-click-power">+1</span>
+        </div>
+        <div class="job-stat">
+          <span class="job-stat-label">自動收入</span>
+          <span class="job-stat-val" id="job-auto-income">+0/秒</span>
+        </div>
+      </div>
+
+      <button id="wash-btn" aria-label="洗一個碗">
+        <span class="wash-icon">🧽</span>
+        <span class="wash-label">洗一個碗</span>
+        <span class="wash-earn" id="wash-earn">+1 籌碼</span>
+      </button>
+
+      <div id="upgrades-wrap">
+        <h3 class="upgrades-title">升級道具</h3>
+        <div id="upgrades-list"></div>
       </div>
     </section>
 
