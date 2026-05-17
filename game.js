@@ -165,6 +165,17 @@ const SFX = {
     );
   },
 
+  jackpot() {
+    const notes = [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5, 1318.5];
+    notes.forEach((f, i) => this._tone(f, 'triangle', i * 0.055, 0.75, 0.26));
+    [523.25, 659.25, 783.99, 1046.5].forEach(f =>
+      this._tone(f, 'sine', 0.55, 2.2, 0.14)
+    );
+    [1046.5, 1318.5, 1568, 2093].forEach((f, i) =>
+      this._tone(f, 'sine', 0.8 + i * 0.065, 0.45, 0.11)
+    );
+  },
+
   bankrupt() {
     const c = this._getCtx();
     if (!c) return;
@@ -200,7 +211,7 @@ const Particles = {
   },
 
   emit(type, x, y) {
-    const counts = { bigWin: 110, win: 50, buy: 12, wash: 8, upgrade: 24 };
+    const counts = { bigWin: 110, win: 50, buy: 12, wash: 8, upgrade: 24, jackpot: 200 };
     const n = counts[type] ?? 20;
     for (let i = 0; i < n; i++) this.list.push(this._make(type, x, y));
     if (!this.raf) this._loop();
@@ -208,8 +219,9 @@ const Particles = {
 
   _make(type, x, y) {
     const angle = Math.random() * Math.PI * 2;
-    const spd = type === 'bigWin' ? 5 + Math.random() * 11
-              : type === 'wash'   ? 1 + Math.random() * 3
+    const isBig = type === 'bigWin' || type === 'jackpot';
+    const spd = isBig              ? 5 + Math.random() * 13
+              : type === 'wash'    ? 1 + Math.random() * 3
               : 2 + Math.random() * 7;
     const PALETTES = {
       bigWin:  ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bff','#ffffff','#f59e0b'],
@@ -217,21 +229,22 @@ const Particles = {
       buy:     ['#a78bfa','#818cf8','#c4b5fd'],
       wash:    ['#67e8f9','#a5f3fc','#ffffff','#cffafe','#0891b2'],
       upgrade: ['#34d399','#6ee7b7','#a7f3d0','#10b981'],
+      jackpot: ['#ffd700','#ff6bff','#ffffff','#f59e0b','#ff6b6b','#4d96ff','#ffd93d','#6bcb77'],
     };
     const pal = PALETTES[type] ?? PALETTES.win;
     return {
       x, y,
       vx: Math.cos(angle) * spd,
-      vy: Math.sin(angle) * spd - (type === 'bigWin' ? 7 : type === 'wash' ? 2 : 3.5),
-      size: type === 'bigWin' ? 5 + Math.random() * 11
-          : type === 'wash'   ? 3 + Math.random() * 6
+      vy: Math.sin(angle) * spd - (isBig ? 8 : type === 'wash' ? 2 : 3.5),
+      size: isBig            ? 5 + Math.random() * 12
+          : type === 'wash'  ? 3 + Math.random() * 6
           : 4 + Math.random() * 8,
       color: pal[Math.floor(Math.random() * pal.length)],
       life: 1,
       decay: type === 'wash' ? 0.025 + Math.random() * 0.02 : 0.013 + Math.random() * 0.022,
       rot: Math.random() * Math.PI * 2,
       rotSpd: (Math.random() - 0.5) * 0.22,
-      shape: type === 'bigWin' ? (Math.random() > 0.45 ? 'rect' : 'circle') : 'circle',
+      shape: isBig ? (Math.random() > 0.45 ? 'rect' : 'circle') : 'circle',
     };
   },
 
@@ -281,7 +294,8 @@ let state = {
   revealed: false,
   isDrawing: false,
   balanceAF: null,
-  stats: { games: 0, wins: 0, bestWin: 0 },
+  stats: { games: 0, wins: 0, bestWin: 0, streak: 0 },
+  jackpotMultipliers: [],
   job: {
     upgrades: {},      // { gloves: 3, dishwasher: 2, ... }
     clickPower: 1,     // per-click earnings (auto-derived)
@@ -704,6 +718,16 @@ function applyReward() {
   if (amount > 0) {
     state.stats.wins++;
     if (amount > state.stats.bestWin) state.stats.bestWin = amount;
+    state.stats.streak++;
+    updateStreakUI();
+    if (state.stats.streak >= 5) {
+      state.stats.streak = 0;
+      updateStreakUI();
+      setTimeout(() => showJackpot(type), 1800);
+    }
+  } else {
+    state.stats.streak = 0;
+    updateStreakUI();
   }
 
   updateStats();
@@ -746,7 +770,75 @@ function triggerEffects(outcome) {
   }
 }
 
-// ── HISTORY ──────────────────────────────────────────────────────────────────
+// ── JACKPOT ───────────────────────────────────────────────────────────────────
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function updateStreakUI() {
+  const s = state.stats.streak;
+  const $banner = document.getElementById('streak-banner');
+  if (s > 0) {
+    document.getElementById('streak-count').textContent = s;
+    document.getElementById('streak-need').textContent = 5 - s;
+    $banner.classList.remove('hidden');
+  } else {
+    $banner.classList.add('hidden');
+  }
+}
+
+function showJackpot(type) {
+  const cardCost = CARD_TYPES[type].cost;
+  state.jackpotMultipliers = shuffleArray([
+    Math.round(cardCost * 1.5),
+    Math.round(cardCost * 3),
+    Math.round(cardCost * 5),
+  ]);
+
+  document.getElementById('jackpot-result').classList.add('hidden');
+  document.querySelectorAll('.chest-btn').forEach(b => {
+    b.disabled = false;
+    b.classList.remove('chosen');
+  });
+  document.getElementById('jackpot-overlay').classList.remove('hidden');
+
+  SFX.jackpot();
+  flash('rgba(255,215,0,0.3)');
+  Particles.emit('jackpot', window.innerWidth / 2, window.innerHeight / 3);
+}
+
+function pickChest(idx) {
+  SFX.resume();
+  const amount = state.jackpotMultipliers[idx];
+
+  document.querySelectorAll('.chest-btn').forEach((b, i) => {
+    b.disabled = true;
+    if (i === idx) b.classList.add('chosen');
+  });
+
+  setTimeout(() => {
+    const prev = state.balance;
+    state.balance += amount;
+    animateBalance(prev, state.balance);
+    updateStats();
+
+    document.getElementById('jackpot-chosen-emoji').textContent = '🎊';
+    document.getElementById('jackpot-result-amount').textContent = `+${amount.toLocaleString()} 籌碼`;
+    document.getElementById('jackpot-result').classList.remove('hidden');
+
+    SFX.bigWin();
+    flash('rgba(255,215,0,0.45)');
+    Particles.emit('jackpot', window.innerWidth / 2, window.innerHeight / 3);
+    Particles.emit('bigWin', window.innerWidth / 2, window.innerHeight / 2);
+  }, 500);
+}
+
+// ── HISTORY ───────────────────────────────────────────────────────────────────
 
 function addHistory(type, outcome, amount) {
   const cfg  = CARD_TYPES[type];
@@ -823,6 +915,15 @@ $tabs.addEventListener('click', (e) => {
 });
 
 $washBtn.addEventListener('click', washDish);
+
+document.querySelectorAll('.chest-btn').forEach(btn =>
+  btn.addEventListener('click', () => pickChest(parseInt(btn.dataset.idx)))
+);
+
+document.getElementById('jackpot-close').addEventListener('click', () => {
+  document.getElementById('jackpot-overlay').classList.add('hidden');
+  exitScratchMode();
+});
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 

@@ -43,6 +43,13 @@
       </div>
     </div>
 
+    <!-- Streak banner -->
+    <div id="streak-banner" class="hidden">
+      <span class="streak-fire">🔥</span>
+      <span class="streak-text">連勝 <strong id="streak-count">1</strong> 次</span>
+      <span class="streak-hint">再贏 <strong id="streak-need">4</strong> 次觸發 JACKPOT！</span>
+    </div>
+
     <!-- Tabs -->
     <div id="tabs" class="tabs">
       <button class="tab-btn active" data-tab="shop">🎰 刮刮樂</button>
@@ -146,6 +153,34 @@
         <li class="history-empty">尚無購買記錄</li>
       </ul>
     </section>
+
+    <!-- Jackpot Fever overlay -->
+    <div id="jackpot-overlay" class="hidden">
+      <div id="jackpot-panel">
+        <div id="jackpot-streak-badge">🔥 連勝 5 次！</div>
+        <h2 id="jackpot-heading">✨ JACKPOT FEVER ✨</h2>
+        <p id="jackpot-sub">選擇一個寶箱，領取你的驚喜獎勵！</p>
+        <div id="jackpot-chests">
+          <button class="chest-btn" data-idx="0">
+            <div class="chest-icon">🪙</div>
+            <div class="chest-label">銅寶箱</div>
+          </button>
+          <button class="chest-btn" data-idx="1">
+            <div class="chest-icon">🎁</div>
+            <div class="chest-label">銀寶箱</div>
+          </button>
+          <button class="chest-btn" data-idx="2">
+            <div class="chest-icon">🏆</div>
+            <div class="chest-label">金寶箱</div>
+          </button>
+        </div>
+        <div id="jackpot-result" class="hidden">
+          <div id="jackpot-chosen-emoji"></div>
+          <div id="jackpot-result-amount"></div>
+          <button id="jackpot-close">繼續遊戲 🎉</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal -->
     <div id="overlay" class="hidden">
