@@ -922,7 +922,7 @@ function showScratchArea(type, outcome, amount) {
   document.getElementById('result-text').textContent   = oc.label;
   const $amt = document.getElementById('result-amount');
   const displayAmt = amount > 0 ? multiply(amount) : amount;
-  $amt.textContent  = displayAmt > 0 ? `+${displayAmt.toLocaleString()} 籌碼` : displayAmt < 0 ? `${displayAmt.toLocaleString()} 籌碼` : '無獎勵';
+  $amt.textContent  = displayAmt > 0 ? `+${displayAmt.toLocaleString()}` : displayAmt < 0 ? `${displayAmt.toLocaleString()}` : '無獎勵';
   $amt.className    = oc.amtClass;
 
   $cardResult.classList.remove('hidden');
@@ -1257,12 +1257,10 @@ function showModal(emoji, title, msg) {
 // ── EVENTS ───────────────────────────────────────────────────────────────────
 
 function attachScratchEvents() {
-  $canvas.onmousedown  = (e) => { state.isDrawing = true;  const p = getScratchPos(e); scratchAt(p.x, p.y); };
-  $canvas.onmousemove  = (e) => { if (!state.isDrawing) return; const p = getScratchPos(e); scratchAt(p.x, p.y); };
-  $canvas.onmouseup    = () => { state.isDrawing = false; };
-  $canvas.onmouseleave = () => { state.isDrawing = false; };
-  $canvas.ontouchstart = (e) => { e.preventDefault(); state.isDrawing = true;  const p = getScratchPos(e); scratchAt(p.x, p.y); };
-  $canvas.ontouchmove  = (e) => { e.preventDefault(); if (!state.isDrawing) return; const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  // Mouse hover scratches without needing to hold the button
+  $canvas.onmousemove  = (e) => { const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  $canvas.ontouchstart = (e) => { e.preventDefault(); const p = getScratchPos(e); scratchAt(p.x, p.y); };
+  $canvas.ontouchmove  = (e) => { e.preventDefault(); const p = getScratchPos(e); scratchAt(p.x, p.y); };
   $canvas.ontouchend   = () => { state.isDrawing = false; };
 }
 
