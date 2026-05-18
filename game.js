@@ -497,6 +497,35 @@ function refreshUpgradeAvailability() {
   });
 }
 
+// Assign a stable float-phase delay per gear slot so they don't bob in sync
+const GEAR_DELAYS = {
+  gloves: '0s', soap: '0.5s', sprayer: '1.1s', license: '1.7s',
+  dishwasher: '0.3s', robot: '0.9s', ai: '1.5s', chain: '2.1s',
+};
+
+function renderGear(popKey) {
+  for (const u of UPGRADES) {
+    const el = document.querySelector(`#wash-gear .gear-item[data-key="${u.key}"]`);
+    if (!el) continue;
+    const count = state.job.upgrades[u.key] || 0;
+    el.style.setProperty('--gd', GEAR_DELAYS[u.key] || '0s');
+    if (count === 0) {
+      el.classList.remove('owned', 'pop-in');
+      el.removeAttribute('data-level');
+      continue;
+    }
+    el.setAttribute('data-level', count > 1 ? `×${count}` : '');
+    if (u.key === popKey) {
+      // Trigger pop-in animation by removing and re-adding the class
+      el.classList.remove('owned', 'pop-in');
+      void el.offsetWidth; // force reflow
+      el.classList.add('owned', 'pop-in');
+    } else if (!el.classList.contains('owned')) {
+      el.classList.add('owned');
+    }
+  }
+}
+
 function buyUpgrade(key) {
   SFX.resume();
   const u = UPGRADES.find(x => x.key === key);
@@ -515,6 +544,7 @@ function buyUpgrade(key) {
   animateBalance(prev, state.balance);
   recalcJobStats();
   renderUpgrades();
+  renderGear(key);   // fly-in the newly purchased icon
   SFX.upgrade();
   saveState();
 
@@ -996,6 +1026,7 @@ Particles.init();
 animateBalance(0, state.balance);
 recalcJobStats();
 renderUpgrades();
+renderGear(null);   // restore purchased gear icons from saved state
 updateStreakUI();
 switchTab('shop');
 renderDeck();

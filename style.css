@@ -531,6 +531,72 @@ section h2 {
 }
 #wash-btn.bounce { animation: wash-bounce 0.32s ease; }
 
+/* ── Upgrade gear icons floating around the plate ── */
+#wash-gear {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gear-item {
+  position: absolute;
+  font-size: clamp(1.6rem, 2.2vw, 2.4rem);
+  transform: translate(var(--gx), var(--gy)) rotate(var(--gr)) scale(0);
+  opacity: 0;
+  transition: none;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.55));
+  will-change: transform, opacity;
+}
+
+/* owned ≥ 1 → visible */
+.gear-item.owned {
+  opacity: 1;
+  transform: translate(var(--gx), var(--gy)) rotate(var(--gr)) scale(1);
+  animation: gear-float 3.6s ease-in-out infinite;
+  animation-delay: var(--gd, 0s);
+}
+
+/* fly-in burst when just purchased */
+.gear-item.pop-in {
+  animation: gear-pop 0.55s cubic-bezier(0.22, 1.6, 0.36, 1) forwards,
+             gear-float 3.6s ease-in-out 0.55s infinite;
+  animation-delay: 0s, var(--gd, 0s);
+}
+
+/* level badge — shown when owned > 1 */
+.gear-item::after {
+  content: attr(data-level);
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  font-size: 0.55em;
+  background: rgba(103,232,249,0.9);
+  color: #0a1628;
+  font-weight: 800;
+  border-radius: 99px;
+  padding: 0 4px;
+  line-height: 1.5;
+  opacity: 0;
+  transition: opacity 0.3s;
+  font-family: 'Segoe UI', sans-serif;
+  pointer-events: none;
+}
+.gear-item[data-level]:not([data-level=""])::after { opacity: 1; }
+
+@keyframes gear-float {
+  0%, 100% { transform: translate(var(--gx), calc(var(--gy) + 0px))   rotate(var(--gr)); }
+  50%       { transform: translate(var(--gx), calc(var(--gy) - 7px))   rotate(var(--gr)); }
+}
+
+@keyframes gear-pop {
+  0%   { transform: translate(calc(var(--gx) * 0.3), calc(var(--gy) * 0.3)) rotate(var(--gr)) scale(0); opacity: 0; }
+  60%  { transform: translate(calc(var(--gx) * 1.08), calc(var(--gy) * 1.08)) rotate(var(--gr)) scale(1.15); opacity: 1; }
+  100% { transform: translate(var(--gx), var(--gy)) rotate(var(--gr)) scale(1); opacity: 1; }
+}
+
 #job-summary {
   display: flex;
   gap: 14px;
