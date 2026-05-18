@@ -215,9 +215,8 @@ const SFX = {
 
   zero() {
     if (!this.enabled) return;
-    const c = this._getCtx(); if (!c) return;
-    this._tone(120, 'sine', 0, 0.18, 0.12);
-    this._tone(90, 'sine', 0.06, 0.22, 0.10);
+    const notes = [523, 466, 415, 392]; // C5, Bb4, Ab4, G4 (降小調)
+    notes.forEach((freq, i) => this._tone(freq, 'sine', i * 0.16, 0.2, 0.15));
   },
 
   jackpot() {
@@ -363,6 +362,8 @@ let state = {
     autoIncome: 0,
     totalWashed: 0,
     bankruptShown: false,
+    loanCount: 0,
+    washDebt: 0,
   },
   prestige: {
     level: 0,        // 0 = first cycle (displayed as 周目 1)
@@ -427,6 +428,8 @@ function saveState() {
         upgrades:      { ...state.job.upgrades },
         totalWashed:   state.job.totalWashed,
         bankruptShown: state.job.bankruptShown,
+        loanCount:     state.job.loanCount,
+        washDebt:      state.job.washDebt,
       },
       prestige: { ...state.prestige },
       achievements: [...state.achievements],
@@ -460,6 +463,8 @@ function loadState() {
       state.job.upgrades      = s.job.upgrades      ?? {};
       state.job.totalWashed   = s.job.totalWashed   ?? 0;
       state.job.bankruptShown = s.job.bankruptShown ?? false;
+      state.job.loanCount     = s.job.loanCount     ?? 0;
+      state.job.washDebt      = s.job.washDebt      ?? 0;
     }
     if (s.prestige) {
       state.prestige.level      = s.prestige.level      ?? 0;
@@ -492,6 +497,7 @@ function animateBalance(from, to) {
       $balance.textContent = to.toLocaleString();
       $balance.className = '';
       refreshUpgradeAvailability();
+      updatePhoneIcon();
     }
     updateGoalUI();
     updateBodyWealth();
@@ -575,6 +581,50 @@ function updateBodyWealth() {
   else if (b / goal < 0.5) document.body.classList.add('wealth-medium');
   else if (b / goal < 0.9) document.body.classList.add('wealth-rich');
   else document.body.classList.add('wealth-goal');
+  updateDeskDecorations();
+}
+
+// Desk decorations: emoji items scattered on the wooden desk based on wealth level
+const DESK_DECO_LEVELS = {
+  'wealth-medium': [
+    { emoji: '🪴', left: '6%',  top: '8%',  rot: -5 },
+  ],
+  'wealth-rich': [
+    { emoji: '🪴', left: '6%',  top: '8%',  rot: -5 },
+    { emoji: '🌸', left: '80%', top: '10%', rot: 7  },
+    { emoji: '🕯️', left: '72%', top: '72%', rot: 0  },
+  ],
+  'wealth-goal': [
+    { emoji: '🏆', left: '6%',  top: '8%',  rot: -4 },
+    { emoji: '💎', left: '80%', top: '10%', rot: 6  },
+    { emoji: '🌸', left: '12%', top: '72%', rot: -8 },
+    { emoji: '🕯️', left: '74%', top: '70%', rot: 3  },
+    { emoji: '⭐', left: '44%', top: '6%',  rot: 12 },
+  ],
+};
+
+let _lastWealthClass = '';
+function updateDeskDecorations() {
+  const wealthClass = ['wealth-debt','wealth-poor','wealth-medium','wealth-rich','wealth-goal']
+    .find(c => document.body.classList.contains(c)) || 'wealth-poor';
+  if (wealthClass === _lastWealthClass) return;
+  _lastWealthClass = wealthClass;
+
+  const container = document.getElementById('desk-decos');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const decos = DESK_DECO_LEVELS[wealthClass];
+  if (!decos) return;
+  decos.forEach(d => {
+    const el = document.createElement('div');
+    el.className = 'desk-deco';
+    el.textContent = d.emoji;
+    el.style.left      = d.left;
+    el.style.top       = d.top;
+    el.style.transform = `rotate(${d.rot}deg)`;
+    container.appendChild(el);
+  });
 }
 
 // ── JOB / UPGRADES ───────────────────────────────────────────────────────────
@@ -777,14 +827,11 @@ function buyCard(type) {
   SFX.resume();
   const cfg = CARD_TYPES[type];
   if (cfg.unlockAt > state.prestige.level) return;
-  if (state.balance < cfg.cost) {
-    showModal('💸', '籌碼不足', `需要 ${cfg.cost} 籌碼才能購買「${cfg.label}」！\n試試打工區洗碗賺錢吧！`);
-    return;
-  }
 
   const prev = state.balance;
   state.balance -= cfg.cost;
   animateBalance(prev, state.balance);
+  updatePhoneIcon();
   SFX.buy();
   saveState();
 
@@ -1052,7 +1099,7 @@ function applyReward() {
   const amount = rawAmount > 0 ? multiply(rawAmount) : rawAmount;
 
   const prev = state.balance;
-  state.balance = Math.max(0, state.balance + amount);
+  state.balance += amount;
   animateBalance(prev, state.balance);
 
   state.stats.games++;
@@ -1104,16 +1151,20 @@ function applyReward() {
   triggerEffects(outcome);
   saveState();
 
-  if (state.balance === 0 && !state.job.bankruptShown) {
+  updatePhoneIcon();
+
+  if (state.balance <= 0 && !state.job.bankruptShown) {
     state.job.bankruptShown = true;
     checkAchievement('first_broke');
-    setTimeout(() => {
-      SFX.bankrupt();
-      showModal(
-        '💔', '破產了！',
-        '別擔心，到「💼 打工」分頁洗碗賺回籌碼吧！'
-      );
-    }, 900);
+    if (state.balance === 0) {
+      setTimeout(() => {
+        SFX.bankrupt();
+        showModal(
+          '💔', '破產了！',
+          '別擔心，到「💼 打工」分頁洗碗賺回籌碼！或點頭像右側的📱借錢。'
+        );
+      }, 900);
+    }
   }
 
   setTimeout(() => {
@@ -1300,6 +1351,15 @@ function washDish() {
   state.balance += earn;
   state.job.totalWashed++;
 
+  if (state.job.washDebt > 0) {
+    state.job.washDebt--;
+    updateDebtUI();
+    if (state.job.washDebt === 0) {
+      showFloatingText('債務清除！', $washBtn, '#f87171');
+      SFX.win();
+    }
+  }
+
   animateBalance(prev, state.balance);
   SFX.wash();
   saveState();
@@ -1317,6 +1377,42 @@ function washDish() {
   if (state.job.totalWashed >= 1000) checkAchievement('wash_1000');
   if (state.job.totalWashed >= 10000) checkAchievement('wash_10000');
   if (state.balance >= 10000) checkAchievement('wash_while_rich');
+}
+
+function updatePhoneIcon() {
+  const btn = document.getElementById('phone-btn');
+  if (!btn) return;
+  btn.classList.toggle('hidden', state.balance >= 0);
+}
+
+function updateDebtUI() {
+  const wrap = document.getElementById('debt-bar-wrap');
+  const fill = document.getElementById('debt-bar-fill');
+  const text = document.getElementById('debt-bar-text');
+  if (!wrap) return;
+
+  const n = state.job.loanCount;
+  const totalDebt = n > 0 ? 20 * n * (n + 1) / 2 : 0;
+  const washed = totalDebt - state.job.washDebt;
+  const pct = totalDebt > 0 ? Math.max(0, Math.min(100, (washed / totalDebt) * 100)) : 0;
+
+  wrap.classList.toggle('hidden', state.job.washDebt <= 0);
+  if (fill) fill.style.width = `${pct}%`;
+  if (text) text.textContent = `還需洗 ${state.job.washDebt.toLocaleString()} 碗`;
+}
+
+function takeLoan() {
+  SFX.resume();
+  state.job.loanCount++;
+  state.balance = 1000;
+  state.job.washDebt += state.job.loanCount * 20;
+  animateBalance(0, 1000);
+  updatePhoneIcon();
+  updateDebtUI();
+  saveState();
+  flash('rgba(248,113,113,0.35)');
+  SFX.bankrupt();
+  showModal('📱', `借貸第 ${state.job.loanCount} 次`, `已借回至 1,000。\n需再洗 ${state.job.loanCount * 20} 個碗清債！`);
 }
 
 // Auto income tick — runs every second
@@ -1346,6 +1442,7 @@ function doPrestige() {
   state.job.upgrades = {};
   state.job.totalWashed = 0;
   state.job.bankruptShown = false;
+  state.job.washDebt = 0;
   state.stats.streak = 0;
   state.jackpotMultipliers = [];
 
@@ -1355,6 +1452,8 @@ function doPrestige() {
   renderDeck();
   updateStreakUI();
   setBalanceInstant(state.balance);
+  updatePhoneIcon();
+  updateDebtUI();
   saveState();
 
   checkAchievement('first_prestige');
@@ -1380,9 +1479,8 @@ function doPrestige() {
 
 function doFullReset() {
   if (!confirm('確定要完全重置遊戲嗎？\n所有金錢、升級、周目進度都將清空。')) return;
-  // Stop the beforeunload + interval handlers from re-saving in-memory
-  // state on top of the cleared storage before the reload completes.
   _suppressSave = true;
+  state.achievements = [];
   try { localStorage.removeItem(SAVE_KEY); } catch {}
   location.reload();
 }
@@ -1404,6 +1502,10 @@ switchTab('shop');
 renderDeck();
 renderTicketList();
 updateBodyWealth();
+updatePhoneIcon();
+updateDebtUI();
+
+document.getElementById('phone-btn').addEventListener('click', takeLoan);
 
 // Achievement button
 document.getElementById('ach-btn').addEventListener('click', toggleAchievements);

@@ -31,6 +31,7 @@
       </div>
 
       <div id="header-right">
+        <button id="phone-btn" class="hidden" title="向地下錢莊借錢">📱</button>
         <div id="balance-bar">
           <span>💰</span>
           <span id="balance">1,000</span>
@@ -76,6 +77,7 @@
 
         <!-- Right: desk surface — purchased cards appear here -->
         <div id="desk-area">
+          <div id="desk-decos"></div>
           <div id="deck-container"></div>
           <p class="desk-hint" id="desk-hint">買張票放到桌上<br>點一下開始刮！</p>
         </div>
@@ -106,6 +108,13 @@
               <span class="dot">·</span>
               <span><strong id="job-auto-income">+0</strong><span class="js-unit">／秒</span></span>
             </div>
+          </div>
+          <div id="debt-bar-wrap" class="hidden">
+            <div id="debt-bar-label">💸 欠債清除進度</div>
+            <div id="debt-bar-track">
+              <div id="debt-bar-fill"></div>
+            </div>
+            <div id="debt-bar-text">還需洗 0 碗</div>
           </div>
         </div>
       </div>
