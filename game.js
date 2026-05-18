@@ -350,7 +350,9 @@ const ctx            = $canvas.getContext('2d');
 
 const SAVE_KEY = 'scratchy_save';
 
+let _suppressSave = false;
 function saveState() {
+  if (_suppressSave) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       balance: state.balance,
@@ -1136,6 +1138,9 @@ function doPrestige() {
 
 function doFullReset() {
   if (!confirm('確定要完全重置遊戲嗎？\n所有金錢、升級、周目進度都將清空。')) return;
+  // Stop the beforeunload + interval handlers from re-saving in-memory
+  // state on top of the cleared storage before the reload completes.
+  _suppressSave = true;
   try { localStorage.removeItem(SAVE_KEY); } catch {}
   location.reload();
 }
