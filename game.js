@@ -773,11 +773,14 @@ function renderAchievements() {
   const unlocked = state.achievements || [];
   for (const ach of ACHIEVEMENTS) {
     const done = unlocked.includes(ach.key);
-    const el = document.createElement('div');
-    el.className = `ach-item ${done ? 'done' : 'locked'}`;
-    el.title = ach.desc;
-    el.innerHTML = `<div class="ach-icon">${done ? ach.icon : '🔒'}</div><div class="ach-name">${done ? ach.name : '???'}</div>`;
-    grid.appendChild(el);
+    const row = document.createElement('div');
+    row.className = `ach-row ${done ? 'done' : 'locked'}`;
+    row.innerHTML = `
+      <div class="ach-col-icon">${done ? ach.icon : '🔒'}</div>
+      <div class="ach-col-name">${ach.name}</div>
+      <div class="ach-col-desc">${done ? ach.desc : '???'}</div>
+    `;
+    grid.appendChild(row);
   }
   const count = document.getElementById('ach-count');
   if (count) count.textContent = `${unlocked.length} / ${ACHIEVEMENTS.length}`;
@@ -793,13 +796,35 @@ function toggleAchievements() {
 // ── TABS ─────────────────────────────────────────────────────────────────────
 
 function switchTab(name) {
+  if (name === 'shop' && state.job.washDebt > 0) {
+    state.activeTab = 'job';
+    $tabs.querySelectorAll('.tab-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === 'job')
+    );
+    $shop.classList.add('hidden');
+    $jobCenter.classList.remove('hidden');
+    updateScreenChrome();
+    showFloatingText('先洗完碗才能繼續刮！', $washBtn, '#f87171');
+    flash('rgba(248,113,113,0.18)');
+    return;
+  }
   state.activeTab = name;
   $tabs.querySelectorAll('.tab-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name)
   );
   $shop.classList.toggle('hidden', name !== 'shop');
   $jobCenter.classList.toggle('hidden', name !== 'job');
+  updateTabLockUI();
   updateScreenChrome();
+}
+
+function updateTabLockUI() {
+  const shopBtn = $tabs.querySelector('.tab-btn[data-tab="shop"]');
+  if (!shopBtn) return;
+  shopBtn.classList.toggle('locked', state.job.washDebt > 0);
+  shopBtn.title = state.job.washDebt > 0
+    ? `欠債未清，洗完 ${state.job.washDebt} 個碗才能回到刮刮樂`
+    : '';
 }
 
 function updateScreenChrome() {
@@ -928,6 +953,11 @@ function renderTicketList() {
 }
 
 function openCard(cardId) {
+  if (state.job.washDebt > 0) {
+    showFloatingText('先洗完碗！', $washBtn || document.body, '#f87171');
+    switchTab('job');
+    return;
+  }
   const card = state.deck.find(c => c.id === cardId);
   if (!card) return;
   state.currentCard = card;
@@ -1357,6 +1387,7 @@ function washDish() {
     if (state.job.washDebt === 0) {
       showFloatingText('債務清除！', $washBtn, '#f87171');
       SFX.win();
+      updateTabLockUI();
     }
   }
 
@@ -1409,10 +1440,17 @@ function takeLoan() {
   animateBalance(0, 1000);
   updatePhoneIcon();
   updateDebtUI();
+  updateTabLockUI();
+  // Force user to wash dishes before scratching again
+  if (!$scratchArea.classList.contains('hidden')) {
+    $scratchArea.classList.add('hidden');
+    $tabs.classList.remove('hidden');
+  }
+  switchTab('job');
   saveState();
   flash('rgba(248,113,113,0.35)');
   SFX.bankrupt();
-  showModal('📱', `借貸第 ${state.job.loanCount} 次`, `已借回至 1,000。\n需再洗 ${state.job.loanCount * 20} 個碗清債！`);
+  showModal('📱', `借貸第 ${state.job.loanCount} 次`, `已借回至 1,000。\n洗完 ${state.job.loanCount * 20} 個碗才能繼續刮刮樂！`);
 }
 
 // Auto income tick — runs every second
@@ -1454,6 +1492,7 @@ function doPrestige() {
   setBalanceInstant(state.balance);
   updatePhoneIcon();
   updateDebtUI();
+  updateTabLockUI();
   saveState();
 
   checkAchievement('first_prestige');
@@ -1504,6 +1543,9 @@ renderTicketList();
 updateBodyWealth();
 updatePhoneIcon();
 updateDebtUI();
+updateTabLockUI();
+// On reload, if debt persists, force-switch to job tab
+if (state.job.washDebt > 0 && state.activeTab === 'shop') switchTab('job');
 
 document.getElementById('phone-btn').addEventListener('click', takeLoan);
 
