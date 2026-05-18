@@ -1,21 +1,21 @@
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 
 const CARD_TYPES = {
-  cheap:   { cost: 50,    label: '街角小福', icon: '🎟️', color: '#9e9e9e', unlockAt: 0,
+  cheap:   { cost: 50,    label: '晴天', icon: '🎟️', color: '#9e9e9e', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.55 }, { outcome:'small', range:[65,200],  prob:0.33 }, { outcome:'big', range:[260,600],   prob:0.12 }] },
-  mid:     { cost: 200,   label: '銀光乍現', icon: '🎫', color: '#4a90d9', unlockAt: 0,
+  mid:     { cost: 200,   label: '彩虹', icon: '🎫', color: '#4a90d9', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.50 }, { outcome:'small', range:[240,600], prob:0.35 }, { outcome:'big', range:[700,1800],  prob:0.15 }] },
-  deluxe:  { cost: 500,   label: '翠幻之眼', icon: '🌟', color: '#a855f7', unlockAt: 0,
+  deluxe:  { cost: 500,   label: '月光', icon: '🌟', color: '#a855f7', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.46 }, { outcome:'small', range:[600,1400],prob:0.35 }, { outcome:'big', range:[1800,5000], prob:0.19 }] },
-  premium: { cost: 1200,  label: '紫鑽奇緣', icon: '💎', color: '#c084fc', unlockAt: 0,
+  premium: { cost: 1200,  label: '星空', icon: '💎', color: '#c084fc', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.42 }, { outcome:'small', range:[1400,3200],prob:0.35 }, { outcome:'big', range:[4500,12000],prob:0.23 }] },
-  elite:   { cost: 3000,  label: '黃金號角', icon: '🥇', color: '#f59e0b', unlockAt: 1,
+  elite:   { cost: 3000,  label: '流星', icon: '🥇', color: '#f59e0b', unlockAt: 1,
     weights: [{ outcome:'zero', prob:0.38 }, { outcome:'small', range:[3500,8000],prob:0.35 }, { outcome:'big', range:[10000,28000],prob:0.27 }] },
-  legend:  { cost: 7500,  label: '烈焰封神', icon: '🏆', color: '#f97316', unlockAt: 1,
+  legend:  { cost: 7500,  label: '極光', icon: '🏆', color: '#f97316', unlockAt: 1,
     weights: [{ outcome:'zero', prob:0.35 }, { outcome:'small', range:[8500,20000],prob:0.35 }, { outcome:'big', range:[25000,70000],prob:0.30 }] },
-  mythic:  { cost: 18000, label: '桃源仙境', icon: '👑', color: '#ec4899', unlockAt: 2,
+  mythic:  { cost: 18000, label: '日蝕', icon: '👑', color: '#ec4899', unlockAt: 2,
     weights: [{ outcome:'zero', prob:0.32 }, { outcome:'small', range:[20000,50000],prob:0.35 }, { outcome:'big', range:[60000,180000],prob:0.33 }] },
-  divine:  { cost: 50000, label: '神諭天啟', icon: '✨', color: '#ffd700', unlockAt: 2,
+  divine:  { cost: 50000, label: '天際', icon: '✨', color: '#ffd700', unlockAt: 2,
     weights: [{ outcome:'zero', prob:0.28 }, { outcome:'small', range:[55000,130000],prob:0.35 }, { outcome:'big', range:[160000,500000],prob:0.37 }] },
 };
 
@@ -906,6 +906,10 @@ function buyCard(type) {
   SFX.resume();
   const cfg = CARD_TYPES[type];
   if (cfg.unlockAt > state.prestige.level) return;
+  if (state.balance < 0) {
+    showModal('💸', '負債中', `餘額為負，先點右上角 📱 借貸，洗完碗再來買！`);
+    return;
+  }
 
   const prev = state.balance;
   state.balance -= cfg.cost;
@@ -1026,6 +1030,8 @@ function showScratchArea(type, outcome, amount) {
   $scratchArea.classList.remove('hidden');
   $backBtn.classList.add('hidden');
   updateScreenChrome();
+  const cfg = CARD_TYPES[type];
+  document.getElementById('scratch-title').textContent = `【${cfg.label}】刮開看看`;
   $cardResult.classList.add('hidden');
   $cardResult.style.boxShadow = '';
   $cardResult.classList.remove('shake');

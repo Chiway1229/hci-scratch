@@ -422,16 +422,28 @@ section h2 {
   align-items: center;
   justify-content: space-between;
   overflow: hidden;
+  isolation: isolate;
 }
+/* Shine layer — always on top */
 .deck-card::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: 5px;
   background: linear-gradient(118deg,
-    transparent 32%, rgba(255,255,255,0.3) 46%,
+    transparent 32%, rgba(255,255,255,0.28) 46%,
     rgba(255,255,255,0.1) 52%, transparent 66%);
   pointer-events: none;
+  z-index: 3;
+}
+/* Decorative pattern layer — sits behind card content */
+.deck-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  pointer-events: none;
+  z-index: 0;
 }
 .deck-card:hover {
   transform: rotate(var(--rot, 0deg)) translateY(-10px) scale(1.08);
@@ -441,16 +453,13 @@ section h2 {
 }
 .deck-card:active { transform: rotate(var(--rot, 0deg)) scale(0.95); }
 
-/* Type-specific card border accent */
-.deck-card.type-cheap   { border-color: rgba(82,183,136,0.7); }
-.deck-card.type-mid     { border-color: rgba(100,160,210,0.7); }
-.deck-card.type-premium { border-color: rgba(199,125,255,0.7); }
-
 .dc-top {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  position: relative;
+  z-index: 1;
 }
 .dc-thumb { font-size: 2rem; line-height: 1.1; }
 .dc-name  { font-size: 0.62rem; color: #444; font-weight: bold; letter-spacing: 0.3px; }
@@ -462,10 +471,11 @@ section h2 {
   background: linear-gradient(165deg, #d8d8d8 0%, #b8b8b8 30%, #d0d0d0 55%, #a0a0a0 100%);
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.2), inset 0 -1px 2px rgba(255,255,255,0.4);
   position: relative;
+  z-index: 1;
   overflow: hidden;
 }
 .dc-silver::after {
-  content: '✦ SCRATCH ✦';
+  content: '— SCRATCH —';
   position: absolute;
   inset: 0;
   display: flex;
@@ -473,9 +483,158 @@ section h2 {
   justify-content: center;
   font-size: 0.45rem;
   font-weight: bold;
-  color: rgba(80,80,80,0.5);
+  color: rgba(80,80,80,0.45);
   letter-spacing: 1px;
 }
+
+/* ── Per-tier card visual designs ─────────────────────────────────────── */
+
+/* CHEAP 晴天 — plain ruled paper, everyday */
+.deck-card.type-cheap {
+  background: linear-gradient(155deg, #f4f0e8 0%, #ece8dc 55%, #e4dfd2 100%);
+  border-color: rgba(160,148,120,0.6);
+}
+.deck-card.type-cheap::after {
+  background: repeating-linear-gradient(0deg,
+    transparent 0, transparent 6px,
+    rgba(0,0,0,0.03) 6px, rgba(0,0,0,0.03) 7px);
+}
+.deck-card.type-cheap .dc-silver {
+  background: linear-gradient(165deg, #c4c0b8, #a8a4a0, #c0bcb8, #9c9894);
+}
+.deck-card.type-cheap .dc-silver::after { content: '— SCRATCH —'; }
+
+/* MID 彩虹 — sky blue, hopeful arc */
+.deck-card.type-mid {
+  background: linear-gradient(155deg, #e8f4fc 0%, #d4eaf8 55%, #c0def4 100%);
+  border-color: rgba(74,144,217,0.65);
+}
+.deck-card.type-mid::after {
+  background:
+    radial-gradient(ellipse 160% 40% at 50% 120%, rgba(74,144,217,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 80%  18% at 50% 108%, rgba(100,200,100,0.08) 0%, transparent 50%);
+}
+.deck-card.type-mid .dc-silver {
+  background: linear-gradient(165deg, #6888c0, #90b4e0, #7898c8, #5070a8);
+}
+.deck-card.type-mid .dc-silver::after { content: '〜 SCRATCH 〜'; }
+.deck-card.type-mid .dc-name { color: #2a4a7a; }
+
+/* DELUXE 月光 — soft lavender, circular glow */
+.deck-card.type-deluxe {
+  background: linear-gradient(155deg, #ede8f8 0%, #ddd4f0 55%, #cec0e6 100%);
+  border-color: rgba(168,85,247,0.65);
+}
+.deck-card.type-deluxe::after {
+  background:
+    radial-gradient(ellipse 65% 55% at 50% 42%, rgba(180,130,255,0.15) 0%, transparent 65%),
+    radial-gradient(ellipse 35% 28% at 68% 22%, rgba(200,160,255,0.1) 0%, transparent 55%);
+}
+.deck-card.type-deluxe .dc-silver {
+  background: linear-gradient(165deg, #9070d8, #b898f0, #a080e0, #8060c8);
+}
+.deck-card.type-deluxe .dc-silver::after { content: '◦ SCRATCH ◦'; }
+.deck-card.type-deluxe .dc-name { color: #4a2a80; }
+
+/* PREMIUM 星空 — deep blue-purple, scattered stars */
+.deck-card.type-premium {
+  background: linear-gradient(155deg, #d8d0ee 0%, #c8b8e6 45%, #b8a0dc 100%);
+  border-color: rgba(192,132,252,0.75);
+}
+.deck-card.type-premium::after {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255,255,255,0.55) 1px, transparent 2px),
+    radial-gradient(circle at 72% 14%, rgba(255,255,255,0.45) 1px, transparent 2px),
+    radial-gradient(circle at 48% 62%, rgba(255,255,255,0.5) 1px, transparent 2px),
+    radial-gradient(circle at 84% 58%, rgba(255,255,255,0.38) 1px, transparent 2px),
+    radial-gradient(circle at 28% 78%, rgba(255,255,255,0.42) 1px, transparent 2px),
+    radial-gradient(circle at 62% 28%, rgba(255,255,255,0.32) 1px, transparent 2px),
+    repeating-linear-gradient(135deg,
+      transparent 0, transparent 9px,
+      rgba(140,90,220,0.04) 9px, rgba(140,90,220,0.04) 10px);
+}
+.deck-card.type-premium .dc-silver {
+  background: linear-gradient(165deg, #6838c0, #9858e0, #8048d0, #5828b0);
+}
+.deck-card.type-premium .dc-silver::after { content: '★ SCRATCH ★'; color: rgba(220,180,255,0.7); }
+.deck-card.type-premium .dc-name { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+/* ELITE 流星 — golden card, diagonal streak */
+.deck-card.type-elite {
+  background: linear-gradient(155deg, #fef8d5 0%, #f8e888 55%, #f0d850 100%);
+  border-color: rgba(245,158,11,0.85);
+}
+.deck-card.type-elite::after {
+  background:
+    linear-gradient(132deg, transparent 28%, rgba(255,230,80,0.25) 46%,
+      rgba(255,245,140,0.3) 50%, transparent 68%),
+    repeating-linear-gradient(62deg,
+      transparent 0, transparent 11px,
+      rgba(200,145,0,0.045) 11px, rgba(200,145,0,0.045) 12px);
+}
+.deck-card.type-elite .dc-silver {
+  background: linear-gradient(165deg, #c0a000, #eed838, #d0b810, #a89000);
+}
+.deck-card.type-elite .dc-silver::after { content: '✦ SCRATCH ✦'; color: rgba(90,60,0,0.55); }
+.deck-card.type-elite .dc-name { color: #6a4800; }
+
+/* LEGEND 極光 — amber-orange, aurora wavy bands */
+.deck-card.type-legend {
+  background: linear-gradient(155deg, #feecd8 0%, #f8d098 48%, #f2b850 100%);
+  border-color: rgba(249,115,22,0.85);
+}
+.deck-card.type-legend::after {
+  background:
+    radial-gradient(ellipse 220% 22% at -10% 75%, rgba(249,115,22,0.14) 0%, transparent 55%),
+    radial-gradient(ellipse 220% 22% at 110% 55%, rgba(245,158,11,0.10) 0%, transparent 55%),
+    radial-gradient(ellipse 220% 22% at 30%  35%, rgba(239,68,68, 0.07) 0%, transparent 55%);
+}
+.deck-card.type-legend .dc-silver {
+  background: linear-gradient(165deg, #b85808, #e08828, #c86810, #a04800);
+}
+.deck-card.type-legend .dc-silver::after { content: '⚡ SCRATCH ⚡'; color: rgba(255,220,140,0.75); }
+.deck-card.type-legend .dc-name { color: #7a2c00; }
+
+/* MYTHIC 日蝕 — deep rose, concentric eclipse rings */
+.deck-card.type-mythic {
+  background: linear-gradient(155deg, #f8d4ec 0%, #f0b4d8 48%, #e890c0 100%);
+  border-color: rgba(236,72,153,0.85);
+}
+.deck-card.type-mythic::after {
+  background:
+    radial-gradient(circle at 50% 38%, transparent 19%, rgba(200,40,130,0.07) 20%, rgba(200,40,130,0.07) 21%, transparent 22%),
+    radial-gradient(circle at 50% 38%, transparent 33%, rgba(200,40,130,0.06) 34%, rgba(200,40,130,0.06) 35%, transparent 36%),
+    radial-gradient(circle at 50% 38%, transparent 49%, rgba(200,40,130,0.05) 50%, rgba(200,40,130,0.05) 51%, transparent 52%),
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(255,200,235,0.18) 0%, transparent 55%);
+}
+.deck-card.type-mythic .dc-silver {
+  background: linear-gradient(165deg, #b82878, #e858a8, #cc4090, #a02868);
+}
+.deck-card.type-mythic .dc-silver::after { content: '∞ SCRATCH ∞'; color: rgba(255,210,235,0.75); }
+.deck-card.type-mythic .dc-name { color: #6a0040; }
+
+/* DIVINE 天際 — gold sunburst, ultimate tier */
+.deck-card.type-divine {
+  background: linear-gradient(155deg, #fffce0 0%, #fff8a8 40%, #fff070 75%, #ffe838 100%);
+  border-color: rgba(255,215,0,0.95);
+  box-shadow: 3px 5px 20px rgba(0,0,0,0.55), 0 0 18px rgba(255,215,0,0.45) !important;
+}
+.deck-card.type-divine::after {
+  background:
+    repeating-conic-gradient(from 0deg at 50% 36%,
+      rgba(180,130,0,0.05) 0deg 7deg, transparent 7deg 14deg),
+    radial-gradient(ellipse 60% 50% at 50% 36%, rgba(255,245,120,0.28) 0%, transparent 60%),
+    radial-gradient(circle at 20% 18%, rgba(255,215,0,0.55) 1.5px, transparent 2.5px),
+    radial-gradient(circle at 78% 22%, rgba(255,215,0,0.48) 1.5px, transparent 2.5px),
+    radial-gradient(circle at 62% 74%, rgba(255,215,0,0.45) 1.5px, transparent 2.5px),
+    radial-gradient(circle at 24% 76%, rgba(255,215,0,0.5) 1.5px, transparent 2.5px);
+}
+.deck-card.type-divine .dc-silver {
+  background: linear-gradient(165deg, #d4a800, #ffe848, #ffd700, #ffc000, #c89800);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.12), 0 0 12px rgba(255,215,0,0.5);
+}
+.deck-card.type-divine .dc-silver::after { content: '✧ SCRATCH ✧'; color: rgba(110,70,0,0.6); }
+.deck-card.type-divine .dc-name { color: #6a4800; font-weight: 900; }
 
 /* Landing animation for new cards */
 @keyframes card-land {
