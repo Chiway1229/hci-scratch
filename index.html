@@ -92,23 +92,20 @@
 
     <!-- Job center -->
     <section id="job-center" class="hidden">
-      <h2>💼 洗碗打工</h2>
-      <div id="job-summary">
-        <div class="job-stat">
-          <span class="job-stat-label">每次洗碗</span>
-          <span class="job-stat-val" id="job-click-power">+1</span>
-        </div>
-        <div class="job-stat">
-          <span class="job-stat-label">自動收入</span>
-          <span class="job-stat-val" id="job-auto-income">+0/秒</span>
+      <div class="job-stage">
+        <button id="wash-btn" aria-label="洗一個碗">
+          <span class="plate-rim">
+            <span class="plate-inner">
+              <span class="wash-icon">🍽️</span>
+            </span>
+          </span>
+        </button>
+        <div id="job-summary">
+          <span><strong id="job-click-power">+1</strong><span class="js-unit">／次</span></span>
+          <span class="dot">·</span>
+          <span><strong id="job-auto-income">+0</strong><span class="js-unit">／秒</span></span>
         </div>
       </div>
-
-      <button id="wash-btn" aria-label="洗一個碗">
-        <span class="wash-icon">🧽</span>
-        <span class="wash-label">洗一個碗</span>
-        <span class="wash-earn" id="wash-earn">+1 籌碼</span>
-      </button>
 
       <div id="upgrades-wrap">
         <h3 class="upgrades-title">升級道具</h3>
@@ -141,7 +138,6 @@
       </div>
 
       <div class="scratch-actions">
-        <button id="reveal-btn">⚡ 一鍵全刮</button>
         <button id="back-btn">← 返回商店</button>
       </div>
     </section>

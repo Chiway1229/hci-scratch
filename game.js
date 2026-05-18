@@ -327,7 +327,6 @@ const $flash        = document.getElementById('flash-overlay');
 const $shine        = document.querySelector('.card-shine');
 const $tabs         = document.getElementById('tabs');
 const $washBtn      = document.getElementById('wash-btn');
-const $washEarn     = document.getElementById('wash-earn');
 const $jobClickP    = document.getElementById('job-click-power');
 const $jobAutoIncome = document.getElementById('job-auto-income');
 const $upgradesList = document.getElementById('upgrades-list');
@@ -414,8 +413,7 @@ function recalcJobStats() {
     else                    state.job.autoIncome += u.effect * count;
   }
   $jobClickP.textContent     = `+${state.job.clickPower.toLocaleString()}`;
-  $jobAutoIncome.textContent = `+${state.job.autoIncome.toLocaleString()}/秒`;
-  $washEarn.textContent      = `+${state.job.clickPower.toLocaleString()} 籌碼`;
+  $jobAutoIncome.textContent = `+${state.job.autoIncome.toLocaleString()}`;
 }
 
 function renderUpgrades() {
@@ -532,6 +530,13 @@ function switchTab(name) {
   );
   $shop.classList.toggle('hidden', name !== 'shop');
   $jobCenter.classList.toggle('hidden', name !== 'job');
+  updateScreenChrome();
+}
+
+function updateScreenChrome() {
+  const inScratch = !$scratchArea.classList.contains('hidden');
+  const jobFocus  = state.activeTab === 'job' && !inScratch;
+  document.body.classList.toggle('focus-job', jobFocus);
 }
 
 // ── GAME LOGIC ───────────────────────────────────────────────────────────────
@@ -580,6 +585,7 @@ function showScratchArea(type, outcome, amount) {
   $jobCenter.classList.add('hidden');
   $tabs.classList.add('hidden');
   $scratchArea.classList.remove('hidden');
+  updateScreenChrome();
   $cardResult.classList.add('hidden');
   $cardResult.style.boxShadow = '';
   $cardResult.classList.remove('shake');
@@ -891,11 +897,6 @@ function attachScratchEvents() {
 document.querySelectorAll('.buy-btn').forEach(btn =>
   btn.addEventListener('click', () => buyCard(btn.dataset.type))
 );
-
-document.getElementById('reveal-btn').addEventListener('click', () => {
-  SFX.resume();
-  if (!state.revealed) revealCard();
-});
 
 document.getElementById('back-btn').addEventListener('click', () => {
   if (!state.revealed && state.currentCard) applyReward();
