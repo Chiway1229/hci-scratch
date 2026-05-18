@@ -1,31 +1,33 @@
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 
+// Payout ranges are tuned so that "small" / "big" outcomes always net a
+// profit above the ticket cost — winning never feels like a net loss.
 const CARD_TYPES = {
   cheap: {
     cost: 50, label: '基本款', icon: '🎟️',
     weights: [
-      { outcome: 'lose',  range: [-100, -10], prob: 0.35 },
-      { outcome: 'zero',  range: [0,   0],    prob: 0.30 },
-      { outcome: 'small', range: [10,  100],  prob: 0.25 },
-      { outcome: 'big',   range: [101, 300],  prob: 0.10 },
+      { outcome: 'lose',  range: [-80,  -10], prob: 0.30 },
+      { outcome: 'zero',  range: [0,    0],   prob: 0.30 },
+      { outcome: 'small', range: [70,   220], prob: 0.30 },  // min > 50 cost
+      { outcome: 'big',   range: [280,  700], prob: 0.10 },
     ],
   },
   mid: {
     cost: 150, label: '進階款', icon: '🎫',
     weights: [
-      { outcome: 'lose',  range: [-200, -20], prob: 0.35 },
-      { outcome: 'zero',  range: [0,   0],    prob: 0.25 },
-      { outcome: 'small', range: [20,  300],  prob: 0.28 },
-      { outcome: 'big',   range: [301, 800],  prob: 0.12 },
+      { outcome: 'lose',  range: [-200, -30], prob: 0.32 },
+      { outcome: 'zero',  range: [0,    0],   prob: 0.25 },
+      { outcome: 'small', range: [200,  500], prob: 0.30 },  // min > 150 cost
+      { outcome: 'big',   range: [750,  1800],prob: 0.13 },
     ],
   },
   premium: {
     cost: 500, label: '豪華款', icon: '💎',
     weights: [
-      { outcome: 'lose',  range: [-500, -50], prob: 0.38 },
-      { outcome: 'zero',  range: [0,   0],    prob: 0.20 },
-      { outcome: 'small', range: [50,  800],  prob: 0.28 },
-      { outcome: 'big',   range: [801, 3000], prob: 0.14 },
+      { outcome: 'lose',  range: [-700, -100], prob: 0.32 },
+      { outcome: 'zero',  range: [0,    0],    prob: 0.20 },
+      { outcome: 'small', range: [700,  1500], prob: 0.30 }, // min > 500 cost
+      { outcome: 'big',   range: [2200, 5500], prob: 0.18 },
     ],
   },
 };
