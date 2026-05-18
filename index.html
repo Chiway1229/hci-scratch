@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scratchy</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='2' y='10' width='60' height='44' rx='8' fill='%23ffb302'/><rect x='8' y='16' width='48' height='32' rx='5' fill='%23291b6b'/><text x='32' y='44' font-size='28' text-anchor='middle' fill='%23ffd84d' font-family='sans-serif' font-weight='900'>%24</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Fixed overlays -->
+  <canvas id="particle-canvas"></canvas>
+  <div id="flash-overlay"></div>
+
+  <!-- Full-width top header (outside #app so it spans the viewport) -->
+  <header>
+    <div class="header-inner">
+      <h1 id="app-title">Scratchy</h1>
+
+      <!-- Center: goal progress for the current prestige cycle -->
+      <div id="goal-display">
+        <div id="goal-meta">
+          <span class="goal-cycle">周目 <strong id="goal-cycle-num">1</strong></span>
+          <span class="goal-dot">·</span>
+          <span class="goal-mult">獎勵 ×<strong id="goal-multiplier">1.0</strong></span>
+        </div>
+        <div id="goal-bar">
+          <div id="goal-bar-fill"></div>
+          <span id="goal-bar-text">0 / 10,000</span>
+        </div>
+      </div>
+
+      <div id="header-right">
+        <button id="phone-btn" class="hidden" title="向地下錢莊借錢">📱</button>
+        <div id="balance-bar">
+          <span>💰</span>
+          <span id="balance">1,000</span>
+        </div>
+        <button id="ach-btn" title="成就">🏅</button>
+        <button id="sound-toggle" title="關閉音效">🔊</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Floating action buttons -->
+  <button id="prestige-btn" class="locked" title="達到目標金額後可進入下一周目">
+    <span class="fab-icon">∞</span>
+    <span class="fab-tip">進入下一周目</span>
+  </button>
+  <button id="full-reset-btn" title="完全重置遊戲（清空所有進度）">
+    <span class="fab-icon">⟲</span>
+    <span class="fab-tip">完全重置</span>
+  </button>
+
+  <div id="app">
+    <!-- Streak banner -->
+    <div id="streak-banner" class="hidden">
+      <span class="streak-fire">🔥</span>
+      <span class="streak-text">連勝 <strong id="streak-count">1</strong> 次</span>
+      <span class="streak-hint">再贏 <strong id="streak-need">4</strong> 次觸發 JACKPOT！</span>
+    </div>
+
+    <!-- Tabs -->
+    <div id="tabs" class="tabs">
+      <button class="tab-btn active" data-tab="shop">🎰 刮刮樂</button>
+      <button class="tab-btn" data-tab="job">💼 打工</button>
+    </div>
+
+    <!-- Shop -->
+    <section id="shop">
+      <div id="shop-split">
+
+        <!-- Left: ticket tier selector -->
+        <div id="ticket-list">
+          <!-- Dynamically populated by renderTicketList() in game.js -->
+        </div>
+
+        <!-- Right: desk surface — purchased cards appear here -->
+        <div id="desk-area">
+          <div id="desk-decos"></div>
+          <div id="deck-container"></div>
+          <p class="desk-hint" id="desk-hint">買張票放到桌上<br>點一下開始刮！</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Job center -->
+    <section id="job-center" class="hidden">
+      <div id="job-split">
+        <div id="upgrades-panel">
+          <h3 class="upgrades-title">升級道具</h3>
+          <div id="upgrades-list"></div>
+        </div>
+        <div id="wash-panel">
+          <!-- Upgrade gear icons floating around the plate (rendered by JS) -->
+          <div id="wash-gear" aria-hidden="true"></div>
+          <div class="job-stage">
+            <button id="wash-btn" aria-label="洗一個碗">
+              <span class="plate-rim">
+                <span class="plate-inner">
+                  <span class="wash-icon">🧽</span>
+                </span>
+              </span>
+            </button>
+            <div id="job-summary">
+              <span><strong id="job-click-power">+1</strong><span class="js-unit">／次</span></span>
+              <span class="dot">·</span>
+              <span><strong id="job-auto-income">+0</strong><span class="js-unit">／秒</span></span>
+            </div>
+          </div>
+          <div id="debt-bar-wrap" class="hidden">
+            <div id="debt-bar-label">💸 欠債清除進度</div>
+            <div id="debt-bar-track">
+              <div id="debt-bar-fill"></div>
+            </div>
+            <div id="debt-bar-text">還需洗 0 碗</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scratch area -->
+    <section id="scratch-area" class="hidden">
+      <h2 id="scratch-title">刮開你的刮刮樂！</h2>
+      <div id="scratch-card">
+        <canvas id="scratch-canvas"></canvas>
+        <div id="card-result" class="hidden">
+          <div class="prize-symbols">
+            <span class="prize-symbol"></span>
+            <span class="prize-symbol"></span>
+            <span class="prize-symbol"></span>
+          </div>
+          <div id="result-text"></div>
+          <div id="result-amount"></div>
+        </div>
+        <div class="card-shine"></div>
+      </div>
+
+      <div id="scratch-progress">
+        <div id="scratch-progress-bar-wrap">
+          <div id="scratch-progress-bar"></div>
+        </div>
+        <span id="scratch-progress-label">0%</span>
+      </div>
+
+      <div class="scratch-actions">
+        <button id="back-btn" class="hidden">← 結束</button>
+      </div>
+    </section>
+
+    <!-- Jackpot Fever overlay -->
+    <div id="jackpot-overlay" class="hidden">
+      <div id="jackpot-panel">
+        <div id="jackpot-streak-badge">🔥 連勝 5 次！</div>
+        <h2 id="jackpot-heading">✨ JACKPOT FEVER ✨</h2>
+        <p id="jackpot-sub">選擇一個寶箱，領取你的驚喜獎勵！</p>
+        <div id="jackpot-chests">
+          <button class="chest-btn" data-idx="0">
+            <div class="chest-icon">🪙</div>
+            <div class="chest-label">銅寶箱</div>
+          </button>
+          <button class="chest-btn" data-idx="1">
+            <div class="chest-icon">🎁</div>
+            <div class="chest-label">銀寶箱</div>
+          </button>
+          <button class="chest-btn" data-idx="2">
+            <div class="chest-icon">🏆</div>
+            <div class="chest-label">金寶箱</div>
+          </button>
+        </div>
+        <div id="jackpot-result" class="hidden">
+          <div id="jackpot-chosen-emoji"></div>
+          <div id="jackpot-result-amount"></div>
+          <button id="jackpot-close">繼續遊戲 🎉</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievements overlay -->
+    <div id="ach-overlay" class="hidden">
+      <div id="ach-panel">
+        <div id="ach-header">
+          <h2>🏅 成就</h2>
+          <span id="ach-count">0 / 50</span>
+          <button id="ach-overlay-close">✕</button>
+        </div>
+        <div id="ach-grid"></div>
+      </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="overlay" class="hidden">
+      <div id="modal">
+        <div id="modal-emoji"></div>
+        <h2 id="modal-title"></h2>
+        <p id="modal-msg"></p>
+        <button id="modal-close">繼續</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
