@@ -353,7 +353,7 @@ section h2 {
   overflow: hidden;
   /* table.png as primary surface; dark wood gradient as fallback */
   background:
-    url('assets/decos/table.svg') center center / cover no-repeat,
+    url('assets/decos/table.png') center center / cover no-repeat,
     radial-gradient(ellipse at 60% 0%, rgba(255,200,100,0.07) 0%, transparent 55%),
     linear-gradient(178deg, #3d2a14 0%, #4e3520 40%, #3a2810 75%, #291c08 100%);
 }
@@ -1809,7 +1809,7 @@ body.wealth-goal {
   position: absolute;
   width: 90px;
   height: 160px;
-  background-image: url('assets/decos/plants.svg');
+  background-image: url('assets/decos/plants.png');
   background-size: 500% auto;   /* image is 5 plants wide; 1/5 fills the container */
   background-repeat: no-repeat;
   pointer-events: none;

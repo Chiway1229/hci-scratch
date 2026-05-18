@@ -598,7 +598,7 @@ const DESK_DECO_LEVELS = {
     { type: 'cobweb', corner: 'bottom-left',  size: 90  },
     { type: 'cobweb', corner: 'bottom-right', size: 90  },
     { type: 'plant', plantIdx: 4, style: { left: '4%',  bottom: '6%' } },
-    { type: 'img', src: 'assets/decos/beer-can.svg',
+    { type: 'img', src: 'assets/decos/beer-can.png',
       style: { width: '55px', left: '28%', bottom: '8%', transform: 'rotate(-18deg)' } },
   ],
   'wealth-poor': [
