@@ -1208,6 +1208,7 @@ section h2 {
 #prestige-btn .fab-icon, #full-reset-btn .fab-icon {
   line-height: 1;
   display: block;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 #prestige-btn .fab-tip, #full-reset-btn .fab-tip {
   position: absolute;
@@ -1233,8 +1234,9 @@ section h2 {
   box-shadow: 0 6px 20px rgba(103, 232, 249, 0.45), 0 0 30px rgba(192,132,252,0.35);
   animation: prestige-pulse 2s ease-in-out infinite;
 }
-#prestige-btn:hover  { transform: scale(1.1) rotate(180deg); }
-#prestige-btn:active { transform: scale(0.92); }
+#prestige-btn:hover               { transform: scale(1.1); }
+#prestige-btn:hover .fab-icon     { transform: rotate(180deg); }
+#prestige-btn:active              { transform: scale(0.92); }
 #prestige-btn .fab-tip { right: 0; }
 
 /* Locked state — goal not reached yet */
@@ -1263,11 +1265,12 @@ section h2 {
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }
 #full-reset-btn:hover  {
-  transform: scale(1.1) rotate(-90deg);
+  transform: scale(1.1);
   background: rgba(248,113,113,0.18);
   box-shadow: 0 6px 18px rgba(248,113,113,0.4);
 }
-#full-reset-btn:active { transform: scale(0.92); }
+#full-reset-btn:hover .fab-icon { transform: rotate(-90deg); }
+#full-reset-btn:active           { transform: scale(0.92); }
 #full-reset-btn .fab-tip { left: 0; }
 
 /* Prestige completion overlay flash */
