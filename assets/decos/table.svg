@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 380">
+  <defs>
+    <linearGradient id="top-surface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c86060"/>
+      <stop offset="45%" stop-color="#a84848"/>
+      <stop offset="100%" stop-color="#7c2e2e"/>
+    </linearGradient>
+    <linearGradient id="leg-grad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8c3434"/>
+      <stop offset="40%" stop-color="#7c2828"/>
+      <stop offset="100%" stop-color="#5c1818"/>
+    </linearGradient>
+    <filter id="subtle-shadow">
+      <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#3a0808" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Light beige background -->
+  <rect width="500" height="380" fill="#f3eeea"/>
+
+  <!-- Table top surface (slight trapezoid perspective) -->
+  <polygon points="45,88 455,88 465,122 35,122" fill="url(#top-surface)" filter="url(#subtle-shadow)"/>
+
+  <!-- Table top highlight / sheen -->
+  <ellipse cx="230" cy="100" rx="130" ry="10" fill="rgba(255,220,200,0.28)" transform="rotate(-4,230,100)"/>
+  <ellipse cx="320" cy="106" rx="50" ry="5" fill="rgba(255,200,180,0.15)"/>
+
+  <!-- Front apron edge (thicker border below table top) -->
+  <polygon points="35,122 465,122 458,144 42,144" fill="#7c2828"/>
+
+  <!-- Apron decorative rail -->
+  <rect x="42" y="126" width="416" height="8" rx="2" fill="#6a2020"/>
+
+  <!-- Corner apron accents -->
+  <rect x="50" y="124" width="34" height="18" rx="2" fill="#8a3838"/>
+  <rect x="416" y="124" width="34" height="18" rx="2" fill="#8a3838"/>
+  <!-- Small corner bracket circles -->
+  <circle cx="60" cy="133" r="4" fill="#b86060"/>
+  <circle cx="440" cy="133" r="4" fill="#b86060"/>
+
+  <!-- Center apron carved detail -->
+  <rect x="205" y="130" width="90" height="8" rx="3" fill="#6a1818"/>
+  <rect x="215" y="132" width="70" height="4" rx="2" fill="#7a2828"/>
+
+  <!-- Back legs (partially behind apron, subtle) -->
+  <rect x="74" y="138" width="26" height="185" rx="3" fill="#5c1818" opacity="0.45"/>
+  <rect x="400" y="138" width="26" height="185" rx="3" fill="#5c1818" opacity="0.45"/>
+
+  <!-- Front left leg -->
+  <rect x="42" y="144" width="38" height="210" rx="4" fill="url(#leg-grad)"/>
+  <!-- Front left leg highlight -->
+  <rect x="46" y="148" width="10" height="200" rx="2" fill="rgba(255,160,120,0.12)"/>
+
+  <!-- Front right leg -->
+  <rect x="420" y="144" width="38" height="210" rx="4" fill="url(#leg-grad)"/>
+  <!-- Front right leg highlight -->
+  <rect x="424" y="148" width="10" height="200" rx="2" fill="rgba(255,160,120,0.12)"/>
+
+  <!-- Horizontal stretcher bar -->
+  <rect x="78" y="290" width="344" height="16" rx="3" fill="#7c2828"/>
+  <rect x="78" y="293" width="344" height="6" rx="2" fill="rgba(255,140,100,0.1)"/>
+
+  <!-- Leg feet / floor bumps -->
+  <ellipse cx="61" cy="356" rx="20" ry="6" fill="#5c1818"/>
+  <ellipse cx="439" cy="356" rx="20" ry="6" fill="#5c1818"/>
+</svg>

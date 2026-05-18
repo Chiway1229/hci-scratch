@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 200" preserveAspectRatio="xMinYMax meet">
+  <defs>
+    <!-- Pot gradients -->
+    <linearGradient id="pot1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6b5340"/>
+      <stop offset="40%" stop-color="#8a6a50"/>
+      <stop offset="100%" stop-color="#5a4030"/>
+    </linearGradient>
+    <linearGradient id="pot2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7a5a42"/>
+      <stop offset="45%" stop-color="#9a7258"/>
+      <stop offset="100%" stop-color="#6a4a32"/>
+    </linearGradient>
+    <linearGradient id="pot3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8a6040"/>
+      <stop offset="45%" stop-color="#aa7a50"/>
+      <stop offset="100%" stop-color="#7a5030"/>
+    </linearGradient>
+    <linearGradient id="pot4" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#9a6a42"/>
+      <stop offset="45%" stop-color="#ba8a5a"/>
+      <stop offset="100%" stop-color="#8a5a32"/>
+    </linearGradient>
+    <linearGradient id="pot5" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#aa7050"/>
+      <stop offset="45%" stop-color="#ca9068"/>
+      <stop offset="100%" stop-color="#9a6040"/>
+    </linearGradient>
+    <!-- Soil -->
+    <linearGradient id="soil" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d2b1a"/>
+      <stop offset="100%" stop-color="#5a3d25"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ═══ PLANT 1 — Lush (x=0..200) ═══ -->
+  <!-- Stem -->
+  <rect x="97" y="82" width="6" height="80" rx="3" fill="#3a6a1a"/>
+  <!-- Large rounded leaves (ficus-like) -->
+  <ellipse cx="100" cy="60" rx="32" ry="40" fill="#2d8a1a" transform="rotate(-8,100,60)"/>
+  <ellipse cx="68" cy="75" rx="28" ry="36" fill="#358a20" transform="rotate(-25,68,75)"/>
+  <ellipse cx="132" cy="72" rx="26" ry="34" fill="#2a7a18" transform="rotate(20,132,72)"/>
+  <ellipse cx="88" cy="40" rx="22" ry="30" fill="#30a020" transform="rotate(-15,88,40)"/>
+  <ellipse cx="118" cy="45" rx="20" ry="28" fill="#28901a" transform="rotate(18,118,45)"/>
+  <!-- Vein hints -->
+  <line x1="100" y1="40" x2="100" y2="88" stroke="#1a6010" stroke-width="0.8" opacity="0.4"/>
+  <line x1="82" y1="58" x2="68" y2="98" stroke="#1a6010" stroke-width="0.7" opacity="0.35"/>
+  <!-- Pot body (trapezoid) -->
+  <polygon points="72,162 128,162 138,195 62,195" fill="url(#pot1)"/>
+  <!-- Pot rim -->
+  <rect x="68" y="157" width="64" height="8" rx="2" fill="#9a7858"/>
+  <!-- Soil surface -->
+  <ellipse cx="100" cy="162" rx="30" ry="6" fill="url(#soil)"/>
+
+  <!-- ═══ PLANT 2 — Full but slightly smaller (x=200..400) ═══ -->
+  <rect x="297" y="92" width="6" height="70" rx="3" fill="#3a6a1a"/>
+  <!-- Leaves - slightly less full, still green -->
+  <ellipse cx="300" cy="72" rx="28" ry="36" fill="#2d8820" transform="rotate(-5,300,72)"/>
+  <ellipse cx="272" cy="82" rx="24" ry="32" fill="#308820" transform="rotate(-28,272,82)"/>
+  <ellipse cx="328" cy="80" rx="23" ry="30" fill="#287818" transform="rotate(22,328,80)"/>
+  <ellipse cx="292" cy="52" rx="18" ry="26" fill="#28941a" transform="rotate(-12,292,52)"/>
+  <!-- One leaf with slight yellow tip -->
+  <ellipse cx="316" cy="58" rx="17" ry="24" fill="#3c8a22" transform="rotate(15,316,58)"/>
+  <ellipse cx="322" cy="48" rx="8" ry="10" fill="#8aaa20" transform="rotate(20,322,48)" opacity="0.7"/>
+  <!-- Pot -->
+  <polygon points="276,164 324,164 333,195 267,195" fill="url(#pot2)"/>
+  <rect x="272" y="159" width="56" height="8" rx="2" fill="#aa8860"/>
+  <ellipse cx="300" cy="164" rx="26" ry="5" fill="url(#soil)"/>
+
+  <!-- ═══ PLANT 3 — Medium / mixed (x=400..600) ═══ -->
+  <rect x="497" y="100" width="5" height="65" rx="2.5" fill="#4a6820"/>
+  <!-- Leaves - mix of green and yellow-green -->
+  <ellipse cx="500" cy="82" rx="24" ry="32" fill="#5a8828" transform="rotate(-6,500,82)"/>
+  <ellipse cx="476" cy="90" rx="20" ry="28" fill="#6a9830" transform="rotate(-30,476,90)"/>
+  <ellipse cx="524" cy="88" rx="19" ry="26" fill="#507820" transform="rotate(25,524,88)"/>
+  <!-- Yellowing leaves -->
+  <ellipse cx="494" cy="62" rx="16" ry="22" fill="#a0b830" transform="rotate(-10,494,62)"/>
+  <ellipse cx="516" cy="68" rx="14" ry="20" fill="#c8c030" transform="rotate(18,516,68)"/>
+  <!-- A drooping lower leaf -->
+  <ellipse cx="478" cy="110" rx="18" ry="12" fill="#88a820" transform="rotate(35,478,110)"/>
+  <!-- Pot (slightly smaller) -->
+  <polygon points="479,165 521,165 529,195 471,195" fill="url(#pot3)"/>
+  <rect x="475" y="160" width="50" height="8" rx="2" fill="#b89060"/>
+  <ellipse cx="500" cy="165" rx="23" ry="5" fill="url(#soil)"/>
+
+  <!-- ═══ PLANT 4 — Declining / drooping (x=600..800) ═══ -->
+  <rect x="697" y="108" width="4" height="58" rx="2" fill="#6a6020"/>
+  <!-- Drooping stems -->
+  <path d="M699,110 Q680,125 665,145" stroke="#6a7020" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M699,112 Q718,130 735,150" stroke="#6a7020" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Yellowing drooping leaves -->
+  <ellipse cx="700" cy="88" rx="18" ry="26" fill="#c8c028" transform="rotate(-4,700,88)"/>
+  <ellipse cx="680" cy="98" rx="16" ry="20" fill="#d0b820" transform="rotate(-35,680,98)"/>
+  <ellipse cx="720" cy="96" rx="15" ry="19" fill="#c0b020" transform="rotate(30,720,96)"/>
+  <!-- Drooping leaf tips -->
+  <ellipse cx="665" cy="148" rx="14" ry="8" fill="#c8b818" transform="rotate(20,665,148)" opacity="0.9"/>
+  <ellipse cx="734" cy="152" rx="13" ry="8" fill="#c0b018" transform="rotate(-15,734,152)" opacity="0.9"/>
+  <!-- Some yellow-brown at tips -->
+  <ellipse cx="666" cy="150" rx="6" ry="4" fill="#b09020" opacity="0.7"/>
+  <!-- Pot (smaller) -->
+  <polygon points="681,167 719,167 726,195 674,195" fill="url(#pot4)"/>
+  <rect x="677" y="162" width="46" height="7" rx="2" fill="#c09868"/>
+  <ellipse cx="700" cy="167" rx="21" ry="4.5" fill="url(#soil)"/>
+
+  <!-- ═══ PLANT 5 — Nearly dead (x=800..1000) ═══ -->
+  <!-- Thin bare main stem -->
+  <rect x="896" y="118" width="3" height="50" rx="1.5" fill="#8a7840"/>
+  <!-- Sparse drooping stems -->
+  <path d="M897,122 Q878,138 862,160" stroke="#8a8030" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M898,124 Q914,142 928,162" stroke="#8a8030" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M897,130 Q882,148 870,172" stroke="#7a7028" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <!-- Very few, very sad leaves (yellow-brown, small) -->
+  <ellipse cx="898" cy="105" rx="11" ry="18" fill="#c8a820" transform="rotate(-5,898,105)"/>
+  <ellipse cx="882" cy="118" rx="9" ry="13" fill="#b09820" transform="rotate(-38,882,118)" opacity="0.85"/>
+  <!-- Droopy near-dead leaf at stem end -->
+  <ellipse cx="862" cy="162" rx="10" ry="6" fill="#a08018" transform="rotate(25,862,162)" opacity="0.75"/>
+  <ellipse cx="928" cy="164" rx="9" ry="5" fill="#988018" transform="rotate(-20,928,164)" opacity="0.7"/>
+  <!-- A fallen leaf near base -->
+  <ellipse cx="878" cy="185" rx="8" ry="4" fill="#907820" transform="rotate(10,878,185)" opacity="0.5"/>
+  <!-- Pot (smallest) -->
+  <polygon points="883,170 913,170 919,195 877,195" fill="url(#pot5)"/>
+  <rect x="879" y="165" width="38" height="7" rx="2" fill="#c8a070"/>
+  <ellipse cx="896" cy="170" rx="18" ry="4" fill="url(#soil)"/>
+
+</svg>
