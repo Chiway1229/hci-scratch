@@ -1,45 +1,94 @@
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 
-// Payout ranges are tuned so that "small" / "big" outcomes always net a
-// profit above the ticket cost — winning never feels like a net loss.
 const CARD_TYPES = {
-  cheap: {
-    cost: 50, label: '基本款', icon: '🎟️',
-    weights: [
-      { outcome: 'lose',  range: [-80,  -10], prob: 0.30 },
-      { outcome: 'zero',  range: [0,    0],   prob: 0.30 },
-      { outcome: 'small', range: [70,   220], prob: 0.30 },  // min > 50 cost
-      { outcome: 'big',   range: [280,  700], prob: 0.10 },
-    ],
-  },
-  mid: {
-    cost: 150, label: '進階款', icon: '🎫',
-    weights: [
-      { outcome: 'lose',  range: [-200, -30], prob: 0.32 },
-      { outcome: 'zero',  range: [0,    0],   prob: 0.25 },
-      { outcome: 'small', range: [200,  500], prob: 0.30 },  // min > 150 cost
-      { outcome: 'big',   range: [750,  1800],prob: 0.13 },
-    ],
-  },
-  premium: {
-    cost: 500, label: '豪華款', icon: '💎',
-    weights: [
-      { outcome: 'lose',  range: [-700, -100], prob: 0.32 },
-      { outcome: 'zero',  range: [0,    0],    prob: 0.20 },
-      { outcome: 'small', range: [700,  1500], prob: 0.30 }, // min > 500 cost
-      { outcome: 'big',   range: [2200, 5500], prob: 0.18 },
-    ],
-  },
+  cheap:   { cost: 50,    label: '基本款', icon: '🎟️', color: '#9e9e9e', unlockAt: 0,
+    weights: [{ outcome:'zero', prob:0.55 }, { outcome:'small', range:[65,200],  prob:0.33 }, { outcome:'big', range:[260,600],   prob:0.12 }] },
+  mid:     { cost: 200,   label: '進階款', icon: '🎫', color: '#4a90d9', unlockAt: 0,
+    weights: [{ outcome:'zero', prob:0.50 }, { outcome:'small', range:[240,600], prob:0.35 }, { outcome:'big', range:[700,1800],  prob:0.15 }] },
+  deluxe:  { cost: 500,   label: '精緻款', icon: '🌟', color: '#a855f7', unlockAt: 0,
+    weights: [{ outcome:'zero', prob:0.46 }, { outcome:'small', range:[600,1400],prob:0.35 }, { outcome:'big', range:[1800,5000], prob:0.19 }] },
+  premium: { cost: 1200,  label: '豪華款', icon: '💎', color: '#c084fc', unlockAt: 0,
+    weights: [{ outcome:'zero', prob:0.42 }, { outcome:'small', range:[1400,3200],prob:0.35 }, { outcome:'big', range:[4500,12000],prob:0.23 }] },
+  elite:   { cost: 3000,  label: '菁英款', icon: '🥇', color: '#f59e0b', unlockAt: 1,
+    weights: [{ outcome:'zero', prob:0.38 }, { outcome:'small', range:[3500,8000],prob:0.35 }, { outcome:'big', range:[10000,28000],prob:0.27 }] },
+  legend:  { cost: 7500,  label: '傳奇款', icon: '🏆', color: '#f97316', unlockAt: 1,
+    weights: [{ outcome:'zero', prob:0.35 }, { outcome:'small', range:[8500,20000],prob:0.35 }, { outcome:'big', range:[25000,70000],prob:0.30 }] },
+  mythic:  { cost: 18000, label: '神話款', icon: '👑', color: '#ec4899', unlockAt: 2,
+    weights: [{ outcome:'zero', prob:0.32 }, { outcome:'small', range:[20000,50000],prob:0.35 }, { outcome:'big', range:[60000,180000],prob:0.33 }] },
+  divine:  { cost: 50000, label: '神聖款', icon: '✨', color: '#ffd700', unlockAt: 2,
+    weights: [{ outcome:'zero', prob:0.28 }, { outcome:'small', range:[55000,130000],prob:0.35 }, { outcome:'big', range:[160000,500000],prob:0.37 }] },
 };
 
 const OUTCOME_CFG = {
-  lose:  { label: '扣錢！', symbols: ['💸', '📉', '💀'], glow: '#f87171', amtClass: 'amount-lose' },
-  zero:  { label: '沒中獎', symbols: ['😐', '🎲', '😑'], glow: '#94a3b8', amtClass: 'amount-zero' },
-  small: { label: '中獎！', symbols: ['⭐', '💰', '✨'], glow: '#4ade80', amtClass: 'amount-win'  },
-  big:   { label: '大獎！', symbols: ['🏆', '👑', '💎'], glow: '#fbbf24', amtClass: 'amount-win'  },
+  lose:  { label: '扣錢！',  symbols: ['💸','📉','💀'], glow: '#f87171', amtClass: 'amount-lose' },
+  zero:  { label: '很遺憾…', symbols: ['🌧️','💨','😮‍💨'], glow: '#64748b', amtClass: 'amount-zero' },
+  small: { label: '中獎！',  symbols: ['⭐','💰','✨'],  glow: '#4ade80', amtClass: 'amount-win'  },
+  big:   { label: '大獎！！',symbols: ['🏆','👑','💎'],  glow: '#fbbf24', amtClass: 'amount-win'  },
 };
 
-// Upgrades — Cookie Clicker style with 1.15x cost growth per purchase
+const ACHIEVEMENTS = [
+  // First-time
+  { key:'first_card',        icon:'🎟️', name:'初刮者',     desc:'買下第一張刮刮樂' },
+  { key:'first_win',         icon:'⭐',  name:'首勝！',     desc:'第一次中獎' },
+  { key:'first_big',         icon:'🏆',  name:'大豐收',     desc:'第一次大獎' },
+  { key:'first_wash',        icon:'🧽',  name:'洗碗新手',   desc:'第一次洗碗' },
+  { key:'first_drop',        icon:'🎁',  name:'神秘掉落',   desc:'第一次獲得升級道具' },
+  { key:'first_prestige',    icon:'♾️',  name:'超越自我',   desc:'完成第一次重生' },
+  { key:'first_jackpot',     icon:'🎰',  name:'幸運光顧',   desc:'第一次觸發 Jackpot Fever' },
+  { key:'first_broke',       icon:'💔',  name:'人生低谷',   desc:'第一次餘額歸零' },
+  { key:'first_unlock',      icon:'🔓',  name:'新視野',     desc:'解鎖新刮刮樂' },
+  { key:'first_autoearning', icon:'🤖',  name:'不勞而獲',   desc:'第一次獲得被動收入' },
+  { key:'first_zero',        icon:'😶',  name:'空手而回',   desc:'第一次刮出沒中獎' },
+  { key:'title_click',       icon:'🎮',  name:'好奇心',     desc:'點擊遊戲標題' },
+  // Volume
+  { key:'scratch_10',        icon:'📋',  name:'練習刮卡',   desc:'刮了10張刮刮樂' },
+  { key:'scratch_50',        icon:'📦',  name:'刮卡達人',   desc:'刮了50張刮刮樂' },
+  { key:'scratch_100',       icon:'🗂️',  name:'百刮不倦',   desc:'刮了100張刮刮樂' },
+  { key:'scratch_500',       icon:'⚡',  name:'刮卡狂魔',   desc:'刮了500張刮刮樂' },
+  { key:'wash_100',          icon:'💧',  name:'勤勞洗碗',   desc:'洗了100個碗' },
+  { key:'wash_1000',         icon:'🌊',  name:'洗碗達人',   desc:'洗了1,000個碗' },
+  { key:'wash_10000',        icon:'🌀',  name:'洗碗傳說',   desc:'洗了10,000個碗' },
+  { key:'deck_5',            icon:'🃏',  name:'桌面混亂',   desc:'桌上同時有5張刮刮樂' },
+  // Money
+  { key:'balance_5k',        icon:'💵',  name:'小有餘裕',   desc:'擁有5,000籌碼' },
+  { key:'balance_20k',       icon:'💴',  name:'中等富裕',   desc:'擁有20,000籌碼' },
+  { key:'balance_100k',      icon:'💰',  name:'大富翁',     desc:'擁有100,000籌碼' },
+  { key:'balance_1m',        icon:'🤑',  name:'百萬俱樂部', desc:'擁有1,000,000籌碼' },
+  { key:'earn_50k',          icon:'📈',  name:'五萬累積',   desc:'累積賺取50,000籌碼' },
+  { key:'earn_500k',         icon:'📊',  name:'財源廣進',   desc:'累積賺取500,000籌碼' },
+  { key:'earn_5m',           icon:'🏦',  name:'傳奇富豪',   desc:'累積賺取5,000,000籌碼' },
+  { key:'first_goal',        icon:'🎯',  name:'達標！',     desc:'第一次達到周目目標金額' },
+  // Card variety
+  { key:'buy_all_types',     icon:'🎪',  name:'刮遍全場',   desc:'每種刮刮樂都買過至少一次' },
+  { key:'unlock_elite',      icon:'🥇',  name:'進階解鎖',   desc:'解鎖菁英款刮刮樂' },
+  { key:'unlock_myth',       icon:'👑',  name:'神話降臨',   desc:'解鎖神話款刮刮樂' },
+  { key:'divine_scratch',    icon:'✨',  name:'神聖時刻',   desc:'購買神聖款刮刮樂' },
+  { key:'divine_big',        icon:'🌟',  name:'天降橫財',   desc:'神聖款中大獎' },
+  { key:'jackpot_gold',      icon:'🏆',  name:'金手指',     desc:'在 Jackpot 中選中最高獎箱' },
+  // Streaks & special
+  { key:'streak_3',          icon:'🔥',  name:'三連勝',     desc:'連贏3次' },
+  { key:'back_to_back',      icon:'🎆',  name:'雙黃蛋',     desc:'連續兩張大獎' },
+  { key:'lucky_7',           icon:'7️⃣',  name:'幸運7',      desc:'中獎金額包含數字7' },
+  { key:'lucky_777',         icon:'🎰',  name:'三個7',      desc:'中獎金額包含777' },
+  { key:'broke_win',         icon:'🌅',  name:'鹹魚翻身',   desc:'餘額低於100時中獎' },
+  { key:'goal_exact',        icon:'💫',  name:'分毫不差',   desc:'中獎後金額剛好達到周目目標' },
+  // Upgrades
+  { key:'drop_click',        icon:'👆',  name:'點擊加速',   desc:'獲得點擊類升級道具' },
+  { key:'drop_auto',         icon:'⚙️',  name:'自動賺錢',   desc:'獲得自動收入升級道具' },
+  { key:'all_upgrades',      icon:'🧰',  name:'全套收集',   desc:'集齊8種升級道具（每種至少1個）' },
+  { key:'upgrade_3',         icon:'🔼',  name:'三級達人',   desc:'任一道具累積3個' },
+  { key:'upgrade_5',         icon:'⏫',  name:'五級大師',   desc:'任一道具累積5個' },
+  // Prestige
+  { key:'prestige_3',        icon:'🌀',  name:'三周目',     desc:'進入第3周目' },
+  { key:'prestige_5',        icon:'💠',  name:'五周目',     desc:'進入第5周目' },
+  { key:'mult_2',            icon:'✌️',  name:'雙倍成長',   desc:'獎勵倍率達到×2.0' },
+  { key:'mult_3',            icon:'🚀',  name:'三倍速成',   desc:'獎勵倍率達到×3.0' },
+  // Easter eggs
+  { key:'night_owl',         icon:'🦉',  name:'夜貓子',     desc:'在凌晨0–5點遊玩' },
+  { key:'wash_while_rich',   icon:'🫧',  name:'富豪洗碗',   desc:'在擁有10,000籌碼時洗碗' },
+];
+
+// Upgrades — drop-only, no buy buttons
 const UPGRADES = [
   // Click upgrades — boost manual dishwashing earnings
   { key: 'gloves',  name: '橡膠手套',     icon: '🧤', baseCost: 100,    effect: 1,   type: 'click' },
@@ -53,9 +102,6 @@ const UPGRADES = [
   { key: 'ai',         name: 'AI 廚房系統', icon: '🧠', baseCost: 30000,  effect: 60,  type: 'auto' },
   { key: 'chain',      name: '連鎖餐廳',    icon: '🏪', baseCost: 200000, effect: 350, type: 'auto' },
 ];
-
-const COST_GROWTH = 1.15;
-const upgradeCost = (u, owned) => Math.ceil(u.baseCost * Math.pow(COST_GROWTH, owned));
 
 // ── AUDIO ────────────────────────────────────────────────────────────────────
 
@@ -165,6 +211,13 @@ const SFX = {
     [392, 349.23, 293.66, 220].forEach((f, i) =>
       this._tone(f, 'sawtooth', i * 0.1, 0.2, 0.13)
     );
+  },
+
+  zero() {
+    if (!this.enabled) return;
+    const c = this._getCtx(); if (!c) return;
+    this._tone(120, 'sine', 0, 0.18, 0.12);
+    this._tone(90, 'sine', 0.06, 0.22, 0.10);
   },
 
   jackpot() {
@@ -297,7 +350,12 @@ let state = {
   revealed: false,
   isDrawing: false,
   balanceAF: null,
-  stats: { games: 0, wins: 0, bestWin: 0, streak: 0 },
+  stats: {
+    games: 0, wins: 0, bestWin: 0, streak: 0,
+    totalEarned: 0,
+    cardTypesBought: {},
+    prevWasBig: false,
+  },
   jackpotMultipliers: [],
   job: {
     upgrades: {},
@@ -311,6 +369,7 @@ let state = {
     multiplier: 1.0, // earnings multiplier (×1.0, ×1.1, ×1.2 …)
   },
   activeTab: 'shop',
+  achievements: [],
 };
 
 // Goal scaling — each cycle the bar grows ~2.5× while multiplier only +0.1×
@@ -356,7 +415,12 @@ function saveState() {
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       balance: state.balance,
-      stats:   { ...state.stats },
+      stats:   {
+        ...state.stats,
+        totalEarned: state.stats.totalEarned,
+        cardTypesBought: { ...state.stats.cardTypesBought },
+        prevWasBig: state.stats.prevWasBig,
+      },
       // Strip internal _new flag before persisting
       deck: state.deck.map(({ _new, ...c }) => c),
       job: {
@@ -365,6 +429,7 @@ function saveState() {
         bankruptShown: state.job.bankruptShown,
       },
       prestige: { ...state.prestige },
+      achievements: [...state.achievements],
     }));
   } catch { /* storage unavailable — skip silently */ }
 }
@@ -380,8 +445,17 @@ function loadState() {
       state.stats.wins    = s.stats.wins    ?? 0;
       state.stats.bestWin = s.stats.bestWin ?? 0;
       state.stats.streak  = s.stats.streak  ?? 0;
+      state.stats.totalEarned     = s.stats.totalEarned     ?? 0;
+      state.stats.cardTypesBought = s.stats.cardTypesBought ?? {};
+      state.stats.prevWasBig      = s.stats.prevWasBig      ?? false;
     }
-    if (Array.isArray(s.deck)) state.deck = s.deck;
+    if (Array.isArray(s.deck)) {
+      state.deck = s.deck;
+      // Migrate old 'lose' deck cards
+      state.deck.forEach(c => {
+        if (c.outcome === 'lose') { c.outcome = 'zero'; c.amount = 0; }
+      });
+    }
     if (s.job) {
       state.job.upgrades      = s.job.upgrades      ?? {};
       state.job.totalWashed   = s.job.totalWashed   ?? 0;
@@ -391,6 +465,7 @@ function loadState() {
       state.prestige.level      = s.prestige.level      ?? 0;
       state.prestige.multiplier = s.prestige.multiplier ?? 1.0;
     }
+    state.achievements = s.achievements ?? [];
   } catch { /* corrupted save — start fresh */ }
 }
 
@@ -419,6 +494,7 @@ function animateBalance(from, to) {
       refreshUpgradeAvailability();
     }
     updateGoalUI();
+    updateBodyWealth();
   }
   state.balanceAF = requestAnimationFrame(tick);
 }
@@ -428,6 +504,7 @@ function setBalanceInstant(v) {
   $balance.textContent = v.toLocaleString();
   refreshUpgradeAvailability();
   updateGoalUI();
+  updateBodyWealth();
 }
 
 // ── GOAL / PRESTIGE UI ──────────────────────────────────────────────────────
@@ -486,6 +563,20 @@ function showFloatingText(text, anchor, color = '#67e8f9') {
 
 function updateStats() { /* stat bar removed — no-op kept for call-site compatibility */ }
 
+// ── WEALTH BACKGROUND ────────────────────────────────────────────────────────
+
+function updateBodyWealth() {
+  const classes = ['wealth-debt','wealth-poor','wealth-medium','wealth-rich','wealth-goal'];
+  classes.forEach(c => document.body.classList.remove(c));
+  const b = state.balance;
+  const goal = currentGoal();
+  if (b <= 0) document.body.classList.add('wealth-debt');
+  else if (b / goal < 0.2) document.body.classList.add('wealth-poor');
+  else if (b / goal < 0.5) document.body.classList.add('wealth-medium');
+  else if (b / goal < 0.9) document.body.classList.add('wealth-rich');
+  else document.body.classList.add('wealth-goal');
+}
+
 // ── JOB / UPGRADES ───────────────────────────────────────────────────────────
 
 function recalcJobStats() {
@@ -507,49 +598,23 @@ function renderUpgrades() {
   $upgradesList.innerHTML = '';
   for (const u of UPGRADES) {
     const owned = state.job.upgrades[u.key] || 0;
-    const cost  = upgradeCost(u, owned);
-    const canBuy = state.balance >= cost;
-
     const row = document.createElement('div');
-    row.className = `upgrade-item ${canBuy ? 'affordable' : ''}`;
+    row.className = `upgrade-item ${owned > 0 ? 'collected' : 'undiscovered'}`;
     row.dataset.key = u.key;
-
-    const descClass = u.type === 'click' ? 'click' : 'auto';
-    const descText  = u.type === 'click'
-      ? `每次洗碗 +${u.effect}`
-      : `+${u.effect}/秒（被動）`;
-
+    const descText = u.type === 'click' ? `每次洗碗 +${u.effect}/次` : `+${u.effect}/秒`;
     row.innerHTML = `
-      <div class="up-icon">${u.icon}</div>
+      <div class="up-icon">${owned > 0 ? u.icon : '❓'}</div>
       <div class="up-info">
-        <div class="up-name">${u.name}${owned > 0 ? `<span class="up-count">×${owned}</span>` : ''}</div>
-        <div class="up-desc ${descClass}">${descText}</div>
+        <div class="up-name">${owned > 0 ? u.name : '神秘道具'}${owned > 1 ? `<span class="up-count">×${owned}</span>` : ''}</div>
+        <div class="up-desc ${u.type}">${owned > 0 ? descText : '刮刮樂掉落'}</div>
       </div>
-      <button class="up-buy" data-key="${u.key}" ${canBuy ? '' : 'disabled'}>
-        ${cost.toLocaleString()}
-      </button>
+      <div class="up-level-badge">${owned > 0 ? `Lv${owned}` : '?'}</div>
     `;
     $upgradesList.appendChild(row);
   }
-
-  $upgradesList.querySelectorAll('.up-buy').forEach(btn =>
-    btn.addEventListener('click', () => buyUpgrade(btn.dataset.key))
-  );
 }
 
-function refreshUpgradeAvailability() {
-  $upgradesList.querySelectorAll('.upgrade-item').forEach(row => {
-    const key   = row.dataset.key;
-    const u     = UPGRADES.find(x => x.key === key);
-    const owned = state.job.upgrades[key] || 0;
-    const cost  = upgradeCost(u, owned);
-    const can   = state.balance >= cost;
-    const btn   = row.querySelector('.up-buy');
-    btn.disabled    = !can;
-    btn.textContent = cost.toLocaleString();
-    row.classList.toggle('affordable', can);
-  });
-}
+function refreshUpgradeAvailability() {}
 
 // Base positions around the plate — each upgrade has its own quadrant,
 // kept well clear of the plate (radius ≈ 130px when plate is 260px wide).
@@ -593,71 +658,87 @@ function renderGear(popKey) {
       el.style.setProperty('--gy', `${pos.y + oy}px`);
       el.style.setProperty('--gr', `${pos.r + (i % 2 ? 6 : -6)}deg`);
       el.style.setProperty('--gd', FLOAT_DELAYS[(delayIdx++) % FLOAT_DELAYS.length]);
-      // Animate only the newest copy of the just-bought upgrade
+      // Animate only the newest copy of the just-obtained upgrade
       if (u.key === popKey && i === display - 1) el.classList.add('pop-in');
       container.appendChild(el);
     }
   }
 }
 
-function buyUpgrade(key) {
-  SFX.resume();
-  const u = UPGRADES.find(x => x.key === key);
-  if (!u) return;
-  const owned = state.job.upgrades[key] || 0;
-  const cost  = upgradeCost(u, owned);
-  if (state.balance < cost) {
-    showModal('💸', '籌碼不足', `需要 ${cost.toLocaleString()} 籌碼！`);
-    return;
-  }
+// ── UPGRADE DROP SYSTEM ───────────────────────────────────────────────────────
 
-  const prev = state.balance;
-  state.balance -= cost;
-  state.job.upgrades[key] = owned + 1;
+const DROP_RATES = { cheap:0.04, mid:0.07, deluxe:0.10, premium:0.14, elite:0.18, legend:0.23, mythic:0.28, divine:0.35 };
+const MAX_UPGRADE_LEVEL = 10;
 
-  animateBalance(prev, state.balance);
-  recalcJobStats();
-  renderUpgrades();
-  renderGear(key);   // fly-in the newly purchased icon
-  SFX.upgrade();
-  saveState();
-
-  const btn = $upgradesList.querySelector(`.up-buy[data-key="${key}"]`);
-  if (btn) {
-    const r = btn.getBoundingClientRect();
-    Particles.emit('upgrade', r.left + r.width / 2, r.top + r.height / 2);
-  }
+function rollUpgradeDrop(cardType) {
+  const rate = DROP_RATES[cardType] || 0.05;
+  if (Math.random() > rate) return null;
+  const eligible = UPGRADES.filter(u => (state.job.upgrades[u.key] || 0) < MAX_UPGRADE_LEVEL);
+  if (!eligible.length) return null;
+  const undiscovered = eligible.filter(u => !state.job.upgrades[u.key]);
+  const pool = undiscovered.length > 0 ? undiscovered : eligible;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
-function washDish() {
-  SFX.resume();
-  const earn = state.job.clickPower;
-  const prev = state.balance;
-  state.balance += earn;
-  state.job.totalWashed++;
-
-  animateBalance(prev, state.balance);
-  SFX.wash();
-  saveState();
-
-  $washBtn.classList.remove('bounce');
-  void $washBtn.offsetWidth;
-  $washBtn.classList.add('bounce');
-
-  const r = $washBtn.getBoundingClientRect();
-  Particles.emit('wash', r.left + r.width / 2, r.top + r.height * 0.4);
-  showFloatingText(`+${earn}`, $washBtn, '#67e8f9');
+function showUpgradeDrop(u) {
+  const banner = document.createElement('div');
+  banner.className = 'upgrade-drop-banner';
+  banner.innerHTML = `<span class="udb-icon">${u.icon}</span><span class="udb-text">獲得 <strong>${u.name}</strong>！ <span class="udb-sub">${u.type==='click'?`+${u.effect}/次`:`+${u.effect}/秒`}</span></span>`;
+  document.body.appendChild(banner);
+  requestAnimationFrame(() => banner.classList.add('visible'));
+  setTimeout(() => {
+    banner.classList.remove('visible');
+    setTimeout(() => banner.remove(), 600);
+  }, 2800);
 }
 
-// Auto income tick — runs every second
-setInterval(() => {
-  if (state.job.autoIncome <= 0) return;
-  state.balance += state.job.autoIncome;
-  $balance.textContent = state.balance.toLocaleString();
-  refreshUpgradeAvailability();
-  updateStats();
-  updateGoalUI();
-}, 1000);
+// ── ACHIEVEMENT SYSTEM ────────────────────────────────────────────────────────
+
+function checkAchievement(key) {
+  if (!Array.isArray(state.achievements)) state.achievements = [];
+  if (state.achievements.includes(key)) return;
+  const ach = ACHIEVEMENTS.find(a => a.key === key);
+  if (!ach) return;
+  state.achievements.push(key);
+  showAchievementToast(ach);
+  saveState();
+}
+
+function showAchievementToast(ach) {
+  const el = document.createElement('div');
+  el.className = 'ach-toast';
+  el.innerHTML = `<span class="ach-toast-icon">${ach.icon}</span><div><div class="ach-toast-title">成就解鎖</div><div class="ach-toast-name">${ach.name}</div></div>`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('visible'));
+  setTimeout(() => {
+    el.classList.remove('visible');
+    setTimeout(() => el.remove(), 500);
+  }, 3200);
+}
+
+function renderAchievements() {
+  const grid = document.getElementById('ach-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const unlocked = state.achievements || [];
+  for (const ach of ACHIEVEMENTS) {
+    const done = unlocked.includes(ach.key);
+    const el = document.createElement('div');
+    el.className = `ach-item ${done ? 'done' : 'locked'}`;
+    el.title = ach.desc;
+    el.innerHTML = `<div class="ach-icon">${done ? ach.icon : '🔒'}</div><div class="ach-name">${done ? ach.name : '???'}</div>`;
+    grid.appendChild(el);
+  }
+  const count = document.getElementById('ach-count');
+  if (count) count.textContent = `${unlocked.length} / ${ACHIEVEMENTS.length}`;
+}
+
+function toggleAchievements() {
+  const overlay = document.getElementById('ach-overlay');
+  if (!overlay) return;
+  const hidden = overlay.classList.toggle('hidden');
+  if (!hidden) renderAchievements();
+}
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
 
@@ -681,7 +762,7 @@ function updateScreenChrome() {
 
 function rollResult(type) {
   const cfg = CARD_TYPES[type];
-  const r   = Math.random();
+  const r = Math.random();
   let cum = 0, chosen = cfg.weights[cfg.weights.length - 1];
   for (const w of cfg.weights) {
     cum += w.prob;
@@ -695,6 +776,7 @@ function rollResult(type) {
 function buyCard(type) {
   SFX.resume();
   const cfg = CARD_TYPES[type];
+  if (cfg.unlockAt > state.prestige.level) return;
   if (state.balance < cfg.cost) {
     showModal('💸', '籌碼不足', `需要 ${cfg.cost} 籌碼才能購買「${cfg.label}」！\n試試打工區洗碗賺錢吧！`);
     return;
@@ -706,7 +788,8 @@ function buyCard(type) {
   SFX.buy();
   saveState();
 
-  const btn = document.querySelector(`.buy-btn[data-type="${type}"]`);
+  // Particle emit from ticket list area
+  const btn = document.querySelector(`#ticket-list .buy-btn[data-type="${type}"]`);
   if (btn) {
     const r = btn.getBoundingClientRect();
     Particles.emit('buy', r.left + r.width / 2, r.top + r.height / 2);
@@ -721,6 +804,20 @@ function buyCard(type) {
     y:   5  + Math.random() * 52,
     _new: true,
   });
+
+  state.stats.cardTypesBought[type] = (state.stats.cardTypesBought[type] || 0) + 1;
+  const total = Object.values(state.stats.cardTypesBought).reduce((a,b) => a+b, 0);
+  checkAchievement('first_card');
+  if (total >= 10) checkAchievement('scratch_10');
+  if (total >= 50) checkAchievement('scratch_50');
+  if (total >= 100) checkAchievement('scratch_100');
+  if (total >= 500) checkAchievement('scratch_500');
+  if (state.deck.length >= 5) checkAchievement('deck_5');
+  if (type === 'divine') checkAchievement('divine_scratch');
+  const typesUnlocked = Object.keys(CARD_TYPES).filter(k => CARD_TYPES[k].unlockAt <= state.prestige.level);
+  const typesBought = typesUnlocked.every(k => state.stats.cardTypesBought[k]);
+  if (typesBought) checkAchievement('buy_all_types');
+
   renderDeck();
 }
 
@@ -734,6 +831,7 @@ function renderDeck() {
 
   state.deck.forEach((card, idx) => {
     const cfg = CARD_TYPES[card.type];
+    if (!cfg) return;
     const div = document.createElement('div');
     div.className = `deck-card type-${card.type}`;
     div.dataset.id = card.id;
@@ -761,6 +859,27 @@ function renderDeck() {
   });
 }
 
+function renderTicketList() {
+  const list = document.getElementById('ticket-list');
+  if (!list) return;
+  list.innerHTML = '';
+  for (const [type, cfg] of Object.entries(CARD_TYPES)) {
+    const locked = cfg.unlockAt > state.prestige.level;
+    const div = document.createElement('div');
+    div.className = `ticket-option card-${type} ${locked ? 'locked-tier' : ''}`;
+    div.innerHTML = `
+      <div class="ticket-thumb">${locked ? '🔒' : cfg.icon}</div>
+      <div class="ticket-name">${locked ? '???' : cfg.label}</div>
+      <div class="ticket-price">${locked ? `第${cfg.unlockAt+1}周目解鎖` : cfg.cost.toLocaleString()+' 💰'}</div>
+      ${locked ? '' : `<button class="buy-btn" data-type="${type}">購買</button>`}
+    `;
+    if (!locked) {
+      div.querySelector('.buy-btn').addEventListener('click', () => buyCard(type));
+    }
+    list.appendChild(div);
+  }
+}
+
 function openCard(cardId) {
   const card = state.deck.find(c => c.id === cardId);
   if (!card) return;
@@ -783,13 +902,19 @@ function showScratchArea(type, outcome, amount) {
   $progressLbl.textContent  = '0%';
   $shine.classList.remove('hidden');
 
-  const oc = OUTCOME_CFG[outcome];
+  const oc = OUTCOME_CFG[outcome] || OUTCOME_CFG.zero;
 
-  $cardResult.style.background = {
-    cheap:   'linear-gradient(135deg,#1b4332,#2d6a4f)',
+  const cardBgs = {
+    cheap:   'linear-gradient(135deg,#1a1a2e,#2d3561)',
     mid:     'linear-gradient(135deg,#0a1628,#1d3557)',
-    premium: 'linear-gradient(135deg,#3b0764,#6d2b8f)',
-  }[type];
+    deluxe:  'linear-gradient(135deg,#2d1f4e,#4a3570)',
+    premium: 'linear-gradient(135deg,#3b0764,#5d1f8f)',
+    elite:   'linear-gradient(135deg,#1a1200,#3d2e00)',
+    legend:  'linear-gradient(135deg,#1f0a00,#5c2000)',
+    mythic:  'linear-gradient(135deg,#150030,#300050)',
+    divine:  'linear-gradient(135deg,#2a1800,#5a3800)',
+  };
+  $cardResult.style.background = cardBgs[type] || cardBgs.cheap;
 
   const syms = $cardResult.querySelectorAll('.prize-symbol');
   oc.symbols.forEach((s, i) => { if (syms[i]) syms[i].textContent = s; });
@@ -817,12 +942,23 @@ function initScratchCanvas() {
   $canvas.width  = W;
   $canvas.height = H;
 
+  const scratchColors = {
+    cheap:   ['#8e8e8e','#d8d8d8','#b0b0b0','#d8d8d8','#8e8e8e'],
+    mid:     ['#5a7fa8','#9abcdc','#7a9fc0','#9abcdc','#5a7fa8'],
+    deluxe:  ['#7a4ab8','#c49aec','#9a6ad8','#c49aec','#7a4ab8'],
+    premium: ['#9a30d8','#d070ff','#b050ef','#d070ff','#9a30d8'],
+    elite:   ['#b87800','#f0c840','#d4a020','#f0c840','#b87800'],
+    legend:  ['#d04000','#ff8040','#e86020','#ff8040','#d04000'],
+    mythic:  ['#800080','#d060d0','#a040a0','#d060d0','#800080'],
+    divine:  ['#c0a000','#fff080','#e0c840','#fff080','#c0a000'],
+  };
+  const cols = scratchColors[state.currentCard?.type] || scratchColors.cheap;
   const grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0,   '#8e8e8e');
-  grad.addColorStop(0.28,'#d8d8d8');
-  grad.addColorStop(0.5, '#b0b0b0');
-  grad.addColorStop(0.72,'#d8d8d8');
-  grad.addColorStop(1,   '#8e8e8e');
+  grad.addColorStop(0,   cols[0]);
+  grad.addColorStop(0.28,cols[1]);
+  grad.addColorStop(0.5, cols[2]);
+  grad.addColorStop(0.72,cols[3]);
+  grad.addColorStop(1,   cols[4]);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
@@ -898,7 +1034,7 @@ function revealCard() {
   $progressLbl.textContent = '100%';
   $shine.classList.add('hidden');
 
-  const oc = OUTCOME_CFG[state.currentCard.outcome];
+  const oc = OUTCOME_CFG[state.currentCard.outcome] || OUTCOME_CFG.zero;
   $cardResult.style.transition = 'box-shadow 0.5s ease';
   $cardResult.style.boxShadow  = `0 0 40px ${oc.glow}, 0 0 80px ${oc.glow}50`;
 
@@ -912,7 +1048,7 @@ function applyReward() {
   // Remove this card from the desk
   state.deck = state.deck.filter(c => c.id !== state.currentCard.id);
 
-  // Apply prestige multiplier only to positive winnings (losses stay as-is)
+  // Apply prestige multiplier only to positive winnings
   const amount = rawAmount > 0 ? multiply(rawAmount) : rawAmount;
 
   const prev = state.balance;
@@ -928,6 +1064,7 @@ function applyReward() {
     if (state.stats.streak >= 5) {
       state.stats.streak = 0;
       updateStreakUI();
+      checkAchievement('first_jackpot');
       setTimeout(() => showJackpot(type), 1800);
     }
   } else {
@@ -935,11 +1072,41 @@ function applyReward() {
     updateStreakUI();
   }
 
+  if (amount > 0) state.stats.totalEarned = (state.stats.totalEarned||0) + amount;
+
+  checkAchievement('first_card'); // harmless dup guard
+  if (outcome === 'zero') checkAchievement('first_zero');
+  if (outcome === 'big' || outcome === 'small') {
+    checkAchievement('first_win');
+    if (state.balance < 100 + amount) checkAchievement('broke_win');
+    if (String(amount).includes('7')) checkAchievement('lucky_7');
+    if (String(amount).includes('777')) checkAchievement('lucky_777');
+    if (state.balance >= currentGoal()) checkAchievement('first_goal');
+    const tot = state.stats.totalEarned || 0;
+    if (tot >= 50000) checkAchievement('earn_50k');
+    if (tot >= 500000) checkAchievement('earn_500k');
+    if (tot >= 5000000) checkAchievement('earn_5m');
+  }
+  if (outcome === 'big') {
+    checkAchievement('first_big');
+    if (type === 'divine') checkAchievement('divine_big');
+    if (state.stats.prevWasBig) checkAchievement('back_to_back');
+    state.stats.prevWasBig = true;
+  } else {
+    state.stats.prevWasBig = false;
+  }
+  if (state.stats.streak >= 3) checkAchievement('streak_3');
+  if (state.balance >= 5000) checkAchievement('balance_5k');
+  if (state.balance >= 20000) checkAchievement('balance_20k');
+  if (state.balance >= 100000) checkAchievement('balance_100k');
+  if (state.balance >= 1000000) checkAchievement('balance_1m');
+
   triggerEffects(outcome);
   saveState();
 
   if (state.balance === 0 && !state.job.bankruptShown) {
     state.job.bankruptShown = true;
+    checkAchievement('first_broke');
     setTimeout(() => {
       SFX.bankrupt();
       showModal(
@@ -948,6 +1115,27 @@ function applyReward() {
       );
     }, 900);
   }
+
+  setTimeout(() => {
+    const drop = rollUpgradeDrop(type);
+    if (drop) {
+      state.job.upgrades[drop.key] = (state.job.upgrades[drop.key] || 0) + 1;
+      recalcJobStats();
+      renderUpgrades();
+      renderGear(drop.key);
+      showUpgradeDrop(drop);
+      SFX.upgrade();
+      checkAchievement('first_drop');
+      if (drop.type === 'click') checkAchievement('drop_click');
+      if (drop.type === 'auto') { checkAchievement('drop_auto'); checkAchievement('first_autoearning'); }
+      const allCollected = UPGRADES.every(u => state.job.upgrades[u.key] > 0);
+      if (allCollected) checkAchievement('all_upgrades');
+      const maxOwned = Math.max(...UPGRADES.map(u => state.job.upgrades[u.key]||0));
+      if (maxOwned >= 3) checkAchievement('upgrade_3');
+      if (maxOwned >= 5) checkAchievement('upgrade_5');
+      saveState();
+    }
+  }, 1500);
 }
 
 function triggerEffects(outcome) {
@@ -958,7 +1146,8 @@ function triggerEffects(outcome) {
   switch (outcome) {
     case 'big':
       SFX.bigWin();
-      flash('rgba(255,215,0,0.22)');
+      flash('rgba(255,215,0,0.4)');
+      setTimeout(() => flash('rgba(255,215,0,0.25)'), 200);
       Particles.emit('bigWin', cx, cy);
       break;
     case 'small':
@@ -966,9 +1155,15 @@ function triggerEffects(outcome) {
       flash('rgba(74,222,128,0.18)');
       Particles.emit('win', cx, cy);
       break;
+    case 'zero':
+      SFX.zero();
+      flash('rgba(80,80,120,0.35)');
+      shakeCard();
+      break;
     case 'lose':
       SFX.lose();
-      flash('rgba(248,113,113,0.18)');
+      flash('rgba(248,113,113,0.35)');
+      flash('rgba(0,0,0,0.25)');
       shakeCard();
       break;
   }
@@ -1020,6 +1215,10 @@ function pickChest(idx) {
   SFX.resume();
   const amount = multiply(state.jackpotMultipliers[idx]);
 
+  // Check if user picked the highest multiplier chest
+  const maxAmount = Math.max(...state.jackpotMultipliers.map(v => multiply(v)));
+  if (amount === maxAmount) checkAchievement('jackpot_gold');
+
   document.querySelectorAll('.chest-btn').forEach((b, i) => {
     b.disabled = true;
     if (i === idx) b.classList.add('chosen');
@@ -1067,10 +1266,6 @@ function attachScratchEvents() {
   $canvas.ontouchend   = () => { state.isDrawing = false; };
 }
 
-document.querySelectorAll('.buy-btn').forEach(btn =>
-  btn.addEventListener('click', () => buyCard(btn.dataset.type))
-);
-
 $backBtn.addEventListener('click', () => {
   exitScratchMode();
 });
@@ -1098,6 +1293,45 @@ document.getElementById('jackpot-close').addEventListener('click', () => {
   exitScratchMode();
 });
 
+// ── WASH DISH ────────────────────────────────────────────────────────────────
+
+function washDish() {
+  SFX.resume();
+  const earn = state.job.clickPower;
+  const prev = state.balance;
+  state.balance += earn;
+  state.job.totalWashed++;
+
+  animateBalance(prev, state.balance);
+  SFX.wash();
+  saveState();
+
+  $washBtn.classList.remove('bounce');
+  void $washBtn.offsetWidth;
+  $washBtn.classList.add('bounce');
+
+  const r = $washBtn.getBoundingClientRect();
+  Particles.emit('wash', r.left + r.width / 2, r.top + r.height * 0.4);
+  showFloatingText(`+${earn}`, $washBtn, '#67e8f9');
+
+  checkAchievement('first_wash');
+  if (state.job.totalWashed >= 100) checkAchievement('wash_100');
+  if (state.job.totalWashed >= 1000) checkAchievement('wash_1000');
+  if (state.job.totalWashed >= 10000) checkAchievement('wash_10000');
+  if (state.balance >= 10000) checkAchievement('wash_while_rich');
+}
+
+// Auto income tick — runs every second
+setInterval(() => {
+  if (state.job.autoIncome <= 0) return;
+  state.balance += state.job.autoIncome;
+  $balance.textContent = state.balance.toLocaleString();
+  refreshUpgradeAvailability();
+  updateStats();
+  updateGoalUI();
+  updateBodyWealth();
+}, 1000);
+
 // ── PRESTIGE / FULL RESET ──────────────────────────────────────────────────
 function doPrestige() {
   const goal = currentGoal();
@@ -1124,6 +1358,16 @@ function doPrestige() {
   updateStreakUI();
   setBalanceInstant(state.balance);
   saveState();
+
+  checkAchievement('first_prestige');
+  if (state.prestige.level >= 3) checkAchievement('prestige_3');
+  if (state.prestige.level >= 5) checkAchievement('prestige_5');
+  if (state.prestige.multiplier >= 2.0) checkAchievement('mult_2');
+  if (state.prestige.multiplier >= 3.0) checkAchievement('mult_3');
+  if (state.prestige.level >= 1) checkAchievement('first_unlock');
+  if (state.prestige.level >= 1) checkAchievement('unlock_elite');
+  if (state.prestige.level >= 2) checkAchievement('unlock_myth');
+  renderTicketList();
 
   // Celebration: rainbow burst + modal
   flash('rgba(192,132,252,0.35)');
@@ -1160,3 +1404,20 @@ updateStreakUI();
 updateGoalUI();
 switchTab('shop');
 renderDeck();
+renderTicketList();
+updateBodyWealth();
+
+// Achievement button
+document.getElementById('ach-btn').addEventListener('click', toggleAchievements);
+document.getElementById('ach-overlay-close').addEventListener('click', toggleAchievements);
+
+// Title easter egg
+let titleClickCount = 0;
+document.getElementById('app-title').addEventListener('click', () => {
+  titleClickCount++;
+  if (titleClickCount === 1) checkAchievement('title_click');
+});
+
+// Night owl check
+const _initHour = new Date().getHours();
+if (_initHour >= 0 && _initHour < 5) checkAchievement('night_owl');

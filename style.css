@@ -1294,3 +1294,240 @@ section h2 {
   #prestige-btn { right: 14px; }
   #full-reset-btn { left: 14px; }
 }
+
+/* ── Balance — bigger ────────────────────────────────────────────────── */
+#balance-bar { font-size: 1.2rem; padding: 6px 18px; }
+#balance     { font-size: 1.4rem; min-width: 70px; }
+
+/* ── Achievement button ──────────────────────────────────────────────── */
+#ach-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px; height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  display: flex; align-items: center; justify-content: center;
+}
+#ach-btn:hover  { background: rgba(255,255,255,0.1); }
+#ach-btn:active { transform: scale(0.9); }
+
+/* ── Upgrade drop banner (top-center fade in/out) ────────────────────── */
+.upgrade-drop-banner {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-16px);
+  background: linear-gradient(135deg, rgba(10,18,42,0.97), rgba(20,32,72,0.97));
+  border: 1px solid rgba(103,232,249,0.5);
+  border-radius: 14px;
+  padding: 10px 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.92rem;
+  color: #e0f0ff;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.4s, transform 0.4s;
+  pointer-events: none;
+  box-shadow: 0 4px 24px rgba(103,232,249,0.3);
+}
+.upgrade-drop-banner.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.udb-icon { font-size: 1.5rem; }
+.udb-text strong { color: #67e8f9; }
+.udb-sub { color: #9ca3af; font-size: 0.82rem; margin-left: 4px; }
+
+/* ── Achievement toast (bottom-right slide-in) ───────────────────────── */
+.ach-toast {
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  background: linear-gradient(135deg, rgba(16,10,38,0.97), rgba(30,16,58,0.97));
+  border: 1px solid rgba(192,132,252,0.5);
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateX(32px);
+  transition: opacity 0.35s, transform 0.35s;
+  pointer-events: none;
+  min-width: 200px;
+  box-shadow: 0 4px 20px rgba(192,132,252,0.35);
+}
+.ach-toast.visible { opacity: 1; transform: translateX(0); }
+.ach-toast-icon { font-size: 1.6rem; flex-shrink: 0; }
+.ach-toast-title { font-size: 0.65rem; color: #c084fc; letter-spacing: 1.2px; text-transform: uppercase; }
+.ach-toast-name  { font-size: 0.9rem; color: #e8e3ff; font-weight: 700; }
+
+/* ── Achievement overlay ─────────────────────────────────────────────── */
+#ach-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+}
+#ach-overlay.hidden { display: none; }
+#ach-panel {
+  background: linear-gradient(160deg, #100e28, #1a1640);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  width: min(680px, 95vw);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+#ach-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+#ach-header h2 { flex: 1; margin: 0; font-size: 1.1rem; color: #e8e3ff; }
+#ach-count { color: #9d8ed9; font-size: 0.85rem; }
+#ach-overlay-close {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #999;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+#ach-overlay-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+#ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3560 transparent;
+}
+.ach-item {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: help;
+  transition: background 0.2s;
+}
+.ach-item.done {
+  background: rgba(192,132,252,0.12);
+  border-color: rgba(192,132,252,0.38);
+}
+.ach-item.done:hover { background: rgba(192,132,252,0.22); }
+.ach-item.locked .ach-icon { filter: grayscale(1) opacity(0.35); }
+.ach-item.locked .ach-name { color: #444; }
+.ach-icon { font-size: 1.8rem; margin-bottom: 5px; }
+.ach-name { font-size: 0.67rem; color: #b8aee8; line-height: 1.3; }
+
+/* ── Wealth state backgrounds ────────────────────────────────────────── */
+body.wealth-debt {
+  background-color: #0a0706;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(180,20,20,0.18) 0%, transparent 60%),
+    radial-gradient(rgba(255,255,255,0.010) 1px, transparent 1px),
+    linear-gradient(160deg, #0a0706 0%, #160c0a 50%, #0a0706 100%);
+  background-size: 100% 100%, 30px 30px, 100% 100%;
+}
+body.wealth-medium {
+  background-color: #0c0e1e;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 8% 72%, rgba(30,80,200,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 92% 18%, rgba(20,120,100,0.12) 0%, transparent 50%),
+    radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(160deg, #0c0e1e 0%, #101830 50%, #0c0e1e 100%);
+  background-size: 100% 100%, 100% 100%, 30px 30px, 100% 100%;
+}
+body.wealth-rich {
+  background-color: #100e10;
+  background-image:
+    radial-gradient(ellipse 65% 55% at 20% 80%, rgba(180,120,10,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 45% at 80% 20%, rgba(200,160,10,0.16) 0%, transparent 50%),
+    radial-gradient(rgba(255,215,0,0.025) 1px, transparent 1px),
+    linear-gradient(160deg, #100e10 0%, #1e1a0a 40%, #18160a 100%);
+  background-size: 100% 100%, 100% 100%, 30px 30px, 100% 100%;
+}
+body.wealth-goal {
+  background-color: #12100a;
+  background-image:
+    radial-gradient(ellipse 80% 70% at 50% 50%, rgba(255,200,0,0.20) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 10% 90%, rgba(255,160,0,0.16) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 50% at 90% 10%, rgba(255,180,0,0.16) 0%, transparent 50%),
+    radial-gradient(rgba(255,215,0,0.04) 1px, transparent 1px),
+    linear-gradient(160deg, #12100a 0%, #20190a 40%, #12100a 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 24px 24px, 100% 100%;
+}
+
+/* ── 8-tier ticket option borders ────────────────────────────────────── */
+.card-cheap   { border-color: rgba(158,158,158,0.35); }
+.card-mid     { border-color: rgba(74,144,217,0.45); }
+.card-deluxe  { border-color: rgba(168,85,247,0.50); }
+.card-premium { border-color: rgba(192,132,252,0.55); }
+.card-elite   { border-color: rgba(245,158,11,0.60); background: rgba(245,158,11,0.06); }
+.card-legend  { border-color: rgba(249,115,22,0.65); background: rgba(249,115,22,0.07); }
+.card-mythic  { border-color: rgba(236,72,153,0.65); background: rgba(236,72,153,0.07); }
+.card-divine  {
+  border-color: rgba(255,215,0,0.85);
+  background: rgba(255,215,0,0.07);
+  box-shadow: 0 0 16px rgba(255,215,0,0.18), inset 0 0 20px rgba(255,215,0,0.04);
+  animation: divine-glow 2.4s ease-in-out infinite;
+}
+@keyframes divine-glow {
+  0%, 100% { box-shadow: 0 0 16px rgba(255,215,0,0.18), inset 0 0 20px rgba(255,215,0,0.04); }
+  50%       { box-shadow: 0 0 28px rgba(255,215,0,0.42), inset 0 0 28px rgba(255,215,0,0.10); }
+}
+.locked-tier { opacity: 0.50; cursor: default; }
+.locked-tier .ticket-price { color: #9d8ed9; font-size: 0.7rem; }
+
+/* ── 8-tier deck card borders ────────────────────────────────────────── */
+.deck-card.type-cheap   { border-color: rgba(158,158,158,0.40); }
+.deck-card.type-mid     { border-color: rgba(74,144,217,0.50); }
+.deck-card.type-deluxe  { border-color: rgba(168,85,247,0.60); }
+.deck-card.type-premium { border-color: rgba(192,132,252,0.70); box-shadow: 0 2px 12px rgba(192,132,252,0.25); }
+.deck-card.type-elite   { border-color: rgba(245,158,11,0.72); box-shadow: 0 2px 14px rgba(245,158,11,0.28); }
+.deck-card.type-legend  { border-color: rgba(249,115,22,0.75); box-shadow: 0 2px 14px rgba(249,115,22,0.32); }
+.deck-card.type-mythic  { border-color: rgba(236,72,153,0.78); box-shadow: 0 2px 16px rgba(236,72,153,0.32); }
+.deck-card.type-divine  {
+  border-color: rgba(255,215,0,0.92);
+  box-shadow: 0 2px 20px rgba(255,215,0,0.50), 0 0 32px rgba(255,215,0,0.20);
+  animation: divine-glow 2.4s ease-in-out infinite;
+}
+
+/* ── Upgrade collection panel ────────────────────────────────────────── */
+.upgrade-item.undiscovered { opacity: 0.42; }
+.upgrade-item.collected    { border-color: rgba(103,232,249,0.30); }
+.up-level-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(103,232,249,0.15);
+  color: #67e8f9;
+  border-radius: 8px;
+  padding: 2px 7px;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.upgrade-item.undiscovered .up-level-badge {
+  background: rgba(255,255,255,0.05);
+  color: #444;
+}
