@@ -1,21 +1,21 @@
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 
 const CARD_TYPES = {
-  cheap:   { cost: 50,    label: '基本款', icon: '🎟️', color: '#9e9e9e', unlockAt: 0,
+  cheap:   { cost: 50,    label: '街角小福', icon: '🎟️', color: '#9e9e9e', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.55 }, { outcome:'small', range:[65,200],  prob:0.33 }, { outcome:'big', range:[260,600],   prob:0.12 }] },
-  mid:     { cost: 200,   label: '進階款', icon: '🎫', color: '#4a90d9', unlockAt: 0,
+  mid:     { cost: 200,   label: '銀光乍現', icon: '🎫', color: '#4a90d9', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.50 }, { outcome:'small', range:[240,600], prob:0.35 }, { outcome:'big', range:[700,1800],  prob:0.15 }] },
-  deluxe:  { cost: 500,   label: '精緻款', icon: '🌟', color: '#a855f7', unlockAt: 0,
+  deluxe:  { cost: 500,   label: '翠幻之眼', icon: '🌟', color: '#a855f7', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.46 }, { outcome:'small', range:[600,1400],prob:0.35 }, { outcome:'big', range:[1800,5000], prob:0.19 }] },
-  premium: { cost: 1200,  label: '豪華款', icon: '💎', color: '#c084fc', unlockAt: 0,
+  premium: { cost: 1200,  label: '紫鑽奇緣', icon: '💎', color: '#c084fc', unlockAt: 0,
     weights: [{ outcome:'zero', prob:0.42 }, { outcome:'small', range:[1400,3200],prob:0.35 }, { outcome:'big', range:[4500,12000],prob:0.23 }] },
-  elite:   { cost: 3000,  label: '菁英款', icon: '🥇', color: '#f59e0b', unlockAt: 1,
+  elite:   { cost: 3000,  label: '黃金號角', icon: '🥇', color: '#f59e0b', unlockAt: 1,
     weights: [{ outcome:'zero', prob:0.38 }, { outcome:'small', range:[3500,8000],prob:0.35 }, { outcome:'big', range:[10000,28000],prob:0.27 }] },
-  legend:  { cost: 7500,  label: '傳奇款', icon: '🏆', color: '#f97316', unlockAt: 1,
+  legend:  { cost: 7500,  label: '烈焰封神', icon: '🏆', color: '#f97316', unlockAt: 1,
     weights: [{ outcome:'zero', prob:0.35 }, { outcome:'small', range:[8500,20000],prob:0.35 }, { outcome:'big', range:[25000,70000],prob:0.30 }] },
-  mythic:  { cost: 18000, label: '神話款', icon: '👑', color: '#ec4899', unlockAt: 2,
+  mythic:  { cost: 18000, label: '桃源仙境', icon: '👑', color: '#ec4899', unlockAt: 2,
     weights: [{ outcome:'zero', prob:0.32 }, { outcome:'small', range:[20000,50000],prob:0.35 }, { outcome:'big', range:[60000,180000],prob:0.33 }] },
-  divine:  { cost: 50000, label: '神聖款', icon: '✨', color: '#ffd700', unlockAt: 2,
+  divine:  { cost: 50000, label: '神諭天啟', icon: '✨', color: '#ffd700', unlockAt: 2,
     weights: [{ outcome:'zero', prob:0.28 }, { outcome:'small', range:[55000,130000],prob:0.35 }, { outcome:'big', range:[160000,500000],prob:0.37 }] },
 };
 
@@ -584,23 +584,58 @@ function updateBodyWealth() {
   updateDeskDecorations();
 }
 
-// Desk decorations: emoji items scattered on the wooden desk based on wealth level
+// Desk decorations — mix of CSS-drawn cobwebs and emoji items based on wealth level
 const DESK_DECO_LEVELS = {
+  'wealth-debt': [
+    { type: 'cobweb', corner: 'top-left',     size: 110 },
+    { type: 'cobweb', corner: 'top-right',    size: 110 },
+    { type: 'cobweb', corner: 'bottom-left',  size: 90  },
+    { type: 'cobweb', corner: 'bottom-right', size: 90  },
+    { type: 'emoji',  text: '🕷️', left: '18%', top: '38%', rot: 12, size: '1.5rem' },
+  ],
+  'wealth-poor': [
+    { type: 'cobweb', corner: 'top-left',     size: 90 },
+    { type: 'cobweb', corner: 'bottom-right', size: 80 },
+    { type: 'emoji',  text: '🥀', left: '10%', top: '76%', rot: -8, size: '1.6rem' },
+  ],
   'wealth-medium': [
-    { emoji: '🪴', left: '6%',  top: '8%',  rot: -5 },
+    { type: 'emoji', text: '🪴', left: '6%',  top: '8%',  rot: -5, size: '1.8rem' },
+    { type: 'emoji', text: '☕', left: '82%', top: '76%', rot: 8,  size: '1.5rem' },
   ],
   'wealth-rich': [
-    { emoji: '🪴', left: '6%',  top: '8%',  rot: -5 },
-    { emoji: '🌸', left: '80%', top: '10%', rot: 7  },
-    { emoji: '🕯️', left: '72%', top: '72%', rot: 0  },
+    { type: 'emoji', text: '🪴', left: '6%',  top: '6%',  rot: -5, size: '2rem'   },
+    { type: 'emoji', text: '🌸', left: '82%', top: '8%',  rot: 7,  size: '1.6rem' },
+    { type: 'emoji', text: '🕯️', left: '76%', top: '72%', rot: 0,  size: '1.7rem' },
+    { type: 'emoji', text: '📜', left: '8%',  top: '78%', rot: -5, size: '1.5rem' },
   ],
   'wealth-goal': [
-    { emoji: '🏆', left: '6%',  top: '8%',  rot: -4 },
-    { emoji: '💎', left: '80%', top: '10%', rot: 6  },
-    { emoji: '🌸', left: '12%', top: '72%', rot: -8 },
-    { emoji: '🕯️', left: '74%', top: '70%', rot: 3  },
-    { emoji: '⭐', left: '44%', top: '6%',  rot: 12 },
+    { type: 'emoji', text: '🏆', left: '6%',  top: '6%',  rot: -4, size: '2.2rem' },
+    { type: 'emoji', text: '💎', left: '82%', top: '8%',  rot: 6,  size: '1.8rem' },
+    { type: 'emoji', text: '👑', left: '46%', top: '4%',  rot: 0,  size: '1.9rem' },
+    { type: 'emoji', text: '🪙', left: '12%', top: '78%', rot: -8, size: '1.7rem' },
+    { type: 'emoji', text: '🌟', left: '76%', top: '74%', rot: 4,  size: '1.8rem' },
   ],
+};
+
+const COBWEB_SVG = `<svg viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="rgba(230,230,255,0.32)" stroke-width="0.55" fill="none" stroke-linecap="round">
+    <line x1="0" y1="0" x2="100" y2="22" />
+    <line x1="0" y1="0" x2="100" y2="55" />
+    <line x1="0" y1="0" x2="100" y2="100" />
+    <line x1="0" y1="0" x2="55" y2="100" />
+    <line x1="0" y1="0" x2="22" y2="100" />
+    <path d="M 22 0 Q 14 14 0 22" />
+    <path d="M 45 0 Q 26 26 0 45" />
+    <path d="M 70 0 Q 40 40 0 70" />
+    <path d="M 92 0 Q 55 55 0 92" />
+  </g>
+</svg>`;
+
+const COBWEB_CORNERS = {
+  'top-left':     { left: '0',  top: '0',    transform: 'scale(1, 1)'   },
+  'top-right':    { right: '0', top: '0',    transform: 'scale(-1, 1)'  },
+  'bottom-right': { right: '0', bottom: '0', transform: 'scale(-1, -1)' },
+  'bottom-left':  { left: '0',  bottom: '0', transform: 'scale(1, -1)'  },
 };
 
 let _lastWealthClass = '';
@@ -618,11 +653,21 @@ function updateDeskDecorations() {
   if (!decos) return;
   decos.forEach(d => {
     const el = document.createElement('div');
-    el.className = 'desk-deco';
-    el.textContent = d.emoji;
-    el.style.left      = d.left;
-    el.style.top       = d.top;
-    el.style.transform = `rotate(${d.rot}deg)`;
+    if (d.type === 'cobweb') {
+      el.className = 'desk-cobweb';
+      el.innerHTML = COBWEB_SVG;
+      const pos = COBWEB_CORNERS[d.corner];
+      Object.assign(el.style, pos);
+      el.style.width  = `${d.size}px`;
+      el.style.height = `${d.size}px`;
+    } else {
+      el.className = 'desk-deco';
+      el.textContent = d.text;
+      el.style.left      = d.left;
+      el.style.top       = d.top;
+      el.style.transform = `rotate(${d.rot}deg)`;
+      if (d.size) el.style.fontSize = d.size;
+    }
     container.appendChild(el);
   });
 }

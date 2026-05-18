@@ -294,12 +294,18 @@ section h2 {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 7px;
   background: rgba(0,0,0,0.35);
   border-right: 1px solid rgba(255,255,255,0.06);
   padding: 10px 8px;
-  gap: 7px;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3560 transparent;
 }
+#ticket-list::-webkit-scrollbar { width: 4px; }
+#ticket-list::-webkit-scrollbar-thumb { background: #3a3560; border-radius: 4px; }
+#ticket-list::-webkit-scrollbar-track { background: transparent; }
 
 .ticket-option {
   border-radius: 10px;
@@ -1621,6 +1627,24 @@ body.wealth-goal {
 @keyframes deco-fadein {
   from { opacity: 0; transform: translateY(8px) scale(0.7); }
   to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* CSS-drawn cobwebs anchored to desk corners */
+.desk-cobweb {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  animation: cobweb-fadein 0.9s ease forwards;
+  filter: drop-shadow(0 0 4px rgba(0,0,0,0.4));
+}
+.desk-cobweb svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+@keyframes cobweb-fadein {
+  from { opacity: 0; }
+  to   { opacity: 0.85; }
 }
 
 /* ── Upgrade collection panel ────────────────────────────────────────── */
