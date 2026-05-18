@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Scratchy</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='2' y='10' width='60' height='44' rx='8' fill='%23ffb302'/><rect x='8' y='16' width='48' height='32' rx='5' fill='%23291b6b'/><text x='32' y='44' font-size='28' text-anchor='middle' fill='%23ffd84d' font-family='sans-serif' font-weight='900'>%24</text></svg>" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -15,6 +16,20 @@
   <header>
     <div class="header-inner">
       <h1 id="app-title">Scratchy</h1>
+
+      <!-- Center: goal progress for the current prestige cycle -->
+      <div id="goal-display">
+        <div id="goal-meta">
+          <span class="goal-cycle">周目 <strong id="goal-cycle-num">1</strong></span>
+          <span class="goal-dot">·</span>
+          <span class="goal-mult">獎勵 ×<strong id="goal-multiplier">1.0</strong></span>
+        </div>
+        <div id="goal-bar">
+          <div id="goal-bar-fill"></div>
+          <span id="goal-bar-text">0 / 10,000</span>
+        </div>
+      </div>
+
       <div id="header-right">
         <div id="balance-bar">
           <span>💰</span>
@@ -24,6 +39,16 @@
       </div>
     </div>
   </header>
+
+  <!-- Floating action buttons -->
+  <button id="prestige-btn" class="locked" title="達到目標金額後可進入下一周目">
+    <span class="fab-icon">∞</span>
+    <span class="fab-tip">進入下一周目</span>
+  </button>
+  <button id="full-reset-btn" title="完全重置遊戲（清空所有進度）">
+    <span class="fab-icon">⟲</span>
+    <span class="fab-tip">完全重置</span>
+  </button>
 
   <div id="app">
     <!-- Streak banner -->
@@ -82,17 +107,8 @@
           <div id="upgrades-list"></div>
         </div>
         <div id="wash-panel">
-          <!-- Upgrade gear icons floating around the plate -->
-          <div id="wash-gear" aria-hidden="true">
-            <div class="gear-item" data-key="gloves"     style="--gx:-138px; --gy:-40px;  --gr:-18deg">🧤</div>
-            <div class="gear-item" data-key="soap"       style="--gx: 130px; --gy:-60px;  --gr: 14deg">🧴</div>
-            <div class="gear-item" data-key="sprayer"    style="--gx:-148px; --gy: 60px;  --gr:-10deg">💦</div>
-            <div class="gear-item" data-key="license"    style="--gx: 140px; --gy: 70px;  --gr: 20deg">📜</div>
-            <div class="gear-item" data-key="dishwasher" style="--gx:  10px; --gy:-160px; --gr:  4deg">🍽️</div>
-            <div class="gear-item" data-key="robot"      style="--gx: -10px; --gy: 162px; --gr: -4deg">🤖</div>
-            <div class="gear-item" data-key="ai"         style="--gx:-160px; --gy:  10px; --gr:-22deg">🧠</div>
-            <div class="gear-item" data-key="chain"      style="--gx: 158px; --gy:  10px; --gr: 16deg">🏪</div>
-          </div>
+          <!-- Upgrade gear icons floating around the plate (rendered by JS) -->
+          <div id="wash-gear" aria-hidden="true"></div>
           <div class="job-stage">
             <button id="wash-btn" aria-label="洗一個碗">
               <span class="plate-rim">

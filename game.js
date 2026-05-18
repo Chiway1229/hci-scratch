@@ -304,8 +304,23 @@ let state = {
     totalWashed: 0,
     bankruptShown: false,
   },
+  prestige: {
+    level: 0,        // 0 = first cycle (displayed as 周目 1)
+    multiplier: 1.0, // earnings multiplier (×1.0, ×1.1, ×1.2 …)
+  },
   activeTab: 'shop',
 };
+
+// Goal scaling — each cycle the bar grows ~2.5× while multiplier only +0.1×
+function currentGoal() {
+  return Math.round(10000 * Math.pow(2.5, state.prestige.level));
+}
+function nextMultiplier() {
+  return Math.round((state.prestige.multiplier + 0.1) * 10) / 10;
+}
+function multiply(amount) {
+  return Math.floor(amount * state.prestige.multiplier);
+}
 
 // ── DOM REFS ─────────────────────────────────────────────────────────────────
 
@@ -345,6 +360,7 @@ function saveState() {
         totalWashed:   state.job.totalWashed,
         bankruptShown: state.job.bankruptShown,
       },
+      prestige: { ...state.prestige },
     }));
   } catch { /* storage unavailable — skip silently */ }
 }
@@ -366,6 +382,10 @@ function loadState() {
       state.job.upgrades      = s.job.upgrades      ?? {};
       state.job.totalWashed   = s.job.totalWashed   ?? 0;
       state.job.bankruptShown = s.job.bankruptShown ?? false;
+    }
+    if (s.prestige) {
+      state.prestige.level      = s.prestige.level      ?? 0;
+      state.prestige.multiplier = s.prestige.multiplier ?? 1.0;
     }
   } catch { /* corrupted save — start fresh */ }
 }
@@ -394,6 +414,7 @@ function animateBalance(from, to) {
       $balance.className = '';
       refreshUpgradeAvailability();
     }
+    updateGoalUI();
   }
   state.balanceAF = requestAnimationFrame(tick);
 }
@@ -402,6 +423,33 @@ function setBalanceInstant(v) {
   state.balance = v;
   $balance.textContent = v.toLocaleString();
   refreshUpgradeAvailability();
+  updateGoalUI();
+}
+
+// ── GOAL / PRESTIGE UI ──────────────────────────────────────────────────────
+function updateGoalUI() {
+  const goal = currentGoal();
+  const have = Math.max(0, state.balance);
+  const pct  = Math.min(100, (have / goal) * 100);
+  const bar  = document.getElementById('goal-bar');
+  const fill = document.getElementById('goal-bar-fill');
+  const text = document.getElementById('goal-bar-text');
+  const cyc  = document.getElementById('goal-cycle-num');
+  const mlt  = document.getElementById('goal-multiplier');
+  const fab  = document.getElementById('prestige-btn');
+  if (!bar) return;
+  fill.style.width = `${pct}%`;
+  text.textContent = `${have.toLocaleString()} / ${goal.toLocaleString()}`;
+  cyc.textContent  = state.prestige.level + 1;
+  mlt.textContent  = state.prestige.multiplier.toFixed(1);
+  const reached = have >= goal;
+  bar.classList.toggle('complete', reached);
+  if (fab) {
+    fab.classList.toggle('locked', !reached);
+    fab.title = reached
+      ? `重生！倍率 ×${state.prestige.multiplier.toFixed(1)} → ×${nextMultiplier().toFixed(1)}`
+      : `達到 ${goal.toLocaleString()} 籌碼後可進入下一周目`;
+  }
 }
 
 // ── SCREEN EFFECTS ───────────────────────────────────────────────────────────
@@ -437,14 +485,16 @@ function updateStats() { /* stat bar removed — no-op kept for call-site compat
 // ── JOB / UPGRADES ───────────────────────────────────────────────────────────
 
 function recalcJobStats() {
-  state.job.clickPower = 1;
-  state.job.autoIncome = 0;
+  let click = 1, auto = 0;
   for (const [key, count] of Object.entries(state.job.upgrades)) {
     const u = UPGRADES.find(x => x.key === key);
     if (!u || !count) continue;
-    if (u.type === 'click') state.job.clickPower += u.effect * count;
-    else                    state.job.autoIncome += u.effect * count;
+    if (u.type === 'click') click += u.effect * count;
+    else                    auto  += u.effect * count;
   }
+  // Bake the prestige multiplier into displayed click power / auto income
+  state.job.clickPower = Math.max(1, Math.floor(click * state.prestige.multiplier));
+  state.job.autoIncome = Math.floor(auto * state.prestige.multiplier);
   $jobClickP.textContent     = `+${state.job.clickPower.toLocaleString()}`;
   $jobAutoIncome.textContent = `+${state.job.autoIncome.toLocaleString()}`;
 }
@@ -497,31 +547,51 @@ function refreshUpgradeAvailability() {
   });
 }
 
-// Assign a stable float-phase delay per gear slot so they don't bob in sync
-const GEAR_DELAYS = {
-  gloves: '0s', soap: '0.5s', sprayer: '1.1s', license: '1.7s',
-  dishwasher: '0.3s', robot: '0.9s', ai: '1.5s', chain: '2.1s',
+// Base positions around the plate — each upgrade has its own quadrant,
+// kept well clear of the plate (radius ≈ 130px when plate is 260px wide).
+const GEAR_POSITIONS = {
+  gloves:     { x: -200, y:  -55, r: -16, icon: '🧤' },
+  soap:       { x:  198, y:  -68, r:  12, icon: '🧴' },
+  sprayer:    { x: -212, y:   70, r: -10, icon: '💦' },
+  license:    { x:  205, y:   85, r:  18, icon: '📜' },
+  dishwasher: { x:   15, y: -200, r:   4, icon: '🍽️' },
+  robot:      { x:  -15, y:  205, r:  -4, icon: '🤖' },
+  ai:         { x: -228, y:    8, r: -22, icon: '🧠' },
+  chain:      { x:  225, y:   18, r:  16, icon: '🏪' },
 };
 
+// Cluster offsets for duplicate copies (deterministic, spirals outward)
+const COPY_OFFSETS = [
+  [  0,   0], [-30,  18], [ 28, -16], [-22, -28],
+  [ 34,  24], [-12,  34], [ 18, -36], [-38,   4],
+  [ 38,  -4], [  4,  38], [ -4, -38], [-30, -18],
+];
+const MAX_COPIES = 12;
+const FLOAT_DELAYS = ['0s', '0.3s', '0.6s', '0.9s', '1.2s', '1.5s', '1.8s', '2.1s'];
+
 function renderGear(popKey) {
+  const container = document.getElementById('wash-gear');
+  if (!container) return;
+  container.innerHTML = '';
+  let delayIdx = 0;
   for (const u of UPGRADES) {
-    const el = document.querySelector(`#wash-gear .gear-item[data-key="${u.key}"]`);
-    if (!el) continue;
     const count = state.job.upgrades[u.key] || 0;
-    el.style.setProperty('--gd', GEAR_DELAYS[u.key] || '0s');
-    if (count === 0) {
-      el.classList.remove('owned', 'pop-in');
-      el.removeAttribute('data-level');
-      continue;
-    }
-    el.setAttribute('data-level', count > 1 ? `×${count}` : '');
-    if (u.key === popKey) {
-      // Trigger pop-in animation by removing and re-adding the class
-      el.classList.remove('owned', 'pop-in');
-      void el.offsetWidth; // force reflow
-      el.classList.add('owned', 'pop-in');
-    } else if (!el.classList.contains('owned')) {
-      el.classList.add('owned');
+    if (count === 0) continue;
+    const pos = GEAR_POSITIONS[u.key];
+    if (!pos) continue;
+    const display = Math.min(count, MAX_COPIES);
+    for (let i = 0; i < display; i++) {
+      const [ox, oy] = COPY_OFFSETS[i % COPY_OFFSETS.length];
+      const el = document.createElement('div');
+      el.className = 'gear-item';
+      el.textContent = pos.icon;
+      el.style.setProperty('--gx', `${pos.x + ox}px`);
+      el.style.setProperty('--gy', `${pos.y + oy}px`);
+      el.style.setProperty('--gr', `${pos.r + (i % 2 ? 6 : -6)}deg`);
+      el.style.setProperty('--gd', FLOAT_DELAYS[(delayIdx++) % FLOAT_DELAYS.length]);
+      // Animate only the newest copy of the just-bought upgrade
+      if (u.key === popKey && i === display - 1) el.classList.add('pop-in');
+      container.appendChild(el);
     }
   }
 }
@@ -582,6 +652,7 @@ setInterval(() => {
   $balance.textContent = state.balance.toLocaleString();
   refreshUpgradeAvailability();
   updateStats();
+  updateGoalUI();
 }, 1000);
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
@@ -721,7 +792,8 @@ function showScratchArea(type, outcome, amount) {
 
   document.getElementById('result-text').textContent   = oc.label;
   const $amt = document.getElementById('result-amount');
-  $amt.textContent  = amount > 0 ? `+${amount} 籌碼` : amount < 0 ? `${amount} 籌碼` : '無獎勵';
+  const displayAmt = amount > 0 ? multiply(amount) : amount;
+  $amt.textContent  = displayAmt > 0 ? `+${displayAmt.toLocaleString()} 籌碼` : displayAmt < 0 ? `${displayAmt.toLocaleString()} 籌碼` : '無獎勵';
   $amt.className    = oc.amtClass;
 
   $cardResult.classList.remove('hidden');
@@ -831,10 +903,13 @@ function revealCard() {
 }
 
 function applyReward() {
-  const { type, outcome, amount } = state.currentCard;
+  const { type, outcome, amount: rawAmount } = state.currentCard;
 
   // Remove this card from the desk
   state.deck = state.deck.filter(c => c.id !== state.currentCard.id);
+
+  // Apply prestige multiplier only to positive winnings (losses stay as-is)
+  const amount = rawAmount > 0 ? multiply(rawAmount) : rawAmount;
 
   const prev = state.balance;
   state.balance = Math.max(0, state.balance + amount);
@@ -939,7 +1014,7 @@ function showJackpot(type) {
 
 function pickChest(idx) {
   SFX.resume();
-  const amount = state.jackpotMultipliers[idx];
+  const amount = multiply(state.jackpotMultipliers[idx]);
 
   document.querySelectorAll('.chest-btn').forEach((b, i) => {
     b.disabled = true;
@@ -1019,6 +1094,53 @@ document.getElementById('jackpot-close').addEventListener('click', () => {
   exitScratchMode();
 });
 
+// ── PRESTIGE / FULL RESET ──────────────────────────────────────────────────
+function doPrestige() {
+  const goal = currentGoal();
+  if (state.balance < goal) return;
+  SFX.resume();
+  const oldMult = state.prestige.multiplier;
+  const newMult = nextMultiplier();
+  state.prestige.level += 1;
+  state.prestige.multiplier = newMult;
+
+  // Soft reset: clear gameplay progress, keep prestige + cumulative stats
+  state.balance = 1000;
+  state.deck = [];
+  state.job.upgrades = {};
+  state.job.totalWashed = 0;
+  state.job.bankruptShown = false;
+  state.stats.streak = 0;
+  state.jackpotMultipliers = [];
+
+  recalcJobStats();
+  renderUpgrades();
+  renderGear(null);
+  renderDeck();
+  updateStreakUI();
+  setBalanceInstant(state.balance);
+  saveState();
+
+  // Celebration: rainbow burst + modal
+  flash('rgba(192,132,252,0.35)');
+  Particles.emit('jackpot', window.innerWidth / 2, window.innerHeight / 2);
+  SFX.bigWin();
+  showModal(
+    '∞',
+    `第 ${state.prestige.level + 1} 周目開始！`,
+    `所有獎勵倍率 ×${oldMult.toFixed(1)} → ×${newMult.toFixed(1)}，下一個目標 ${currentGoal().toLocaleString()} 籌碼。`
+  );
+}
+
+function doFullReset() {
+  if (!confirm('確定要完全重置遊戲嗎？\n所有金錢、升級、周目進度都將清空。')) return;
+  try { localStorage.removeItem(SAVE_KEY); } catch {}
+  location.reload();
+}
+
+document.getElementById('prestige-btn').addEventListener('click', doPrestige);
+document.getElementById('full-reset-btn').addEventListener('click', doFullReset);
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 loadState();
@@ -1028,5 +1150,6 @@ recalcJobStats();
 renderUpgrades();
 renderGear(null);   // restore purchased gear icons from saved state
 updateStreakUI();
+updateGoalUI();
 switchTab('shop');
 renderDeck();
