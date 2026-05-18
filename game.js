@@ -290,6 +290,7 @@ const Particles = {
 
 let state = {
   balance: 1000,
+  deck: [],          // cards purchased but not yet scratched
   currentCard: null,
   revealed: false,
   isDrawing: false,
@@ -297,10 +298,10 @@ let state = {
   stats: { games: 0, wins: 0, bestWin: 0, streak: 0 },
   jackpotMultipliers: [],
   job: {
-    upgrades: {},      // { gloves: 3, dishwasher: 2, ... }
-    clickPower: 1,     // per-click earnings (auto-derived)
-    autoIncome: 0,     // per-second earnings (auto-derived)
-    totalWashed: 0,    // lifetime dishes washed
+    upgrades: {},
+    clickPower: 1,
+    autoIncome: 0,
+    totalWashed: 0,
     bankruptShown: false,
   },
   activeTab: 'shop',
@@ -337,6 +338,8 @@ function saveState() {
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       balance: state.balance,
       stats:   { ...state.stats },
+      // Strip internal _new flag before persisting
+      deck: state.deck.map(({ _new, ...c }) => c),
       job: {
         upgrades:      { ...state.job.upgrades },
         totalWashed:   state.job.totalWashed,
@@ -358,6 +361,7 @@ function loadState() {
       state.stats.bestWin = s.stats.bestWin ?? 0;
       state.stats.streak  = s.stats.streak  ?? 0;
     }
+    if (Array.isArray(s.deck)) state.deck = s.deck;
     if (s.job) {
       state.job.upgrades      = s.job.upgrades      ?? {};
       state.job.totalWashed   = s.job.totalWashed   ?? 0;
@@ -595,6 +599,7 @@ function buyCard(type) {
   state.balance -= cfg.cost;
   animateBalance(prev, state.balance);
   SFX.buy();
+  saveState();
 
   const btn = document.querySelector(`.buy-btn[data-type="${type}"]`);
   if (btn) {
@@ -603,10 +608,60 @@ function buyCard(type) {
   }
 
   const { outcome, amount } = rollResult(type);
-  state.currentCard = { type, outcome, amount };
-  state.revealed    = false;
+  state.deck.push({
+    id:      Date.now() + Math.random(),
+    type, outcome, amount,
+    rot: (Math.random() * 22 - 11),
+    x:   5  + Math.random() * 68,
+    y:   5  + Math.random() * 52,
+    _new: true,
+  });
+  renderDeck();
+}
 
-  showScratchArea(type, outcome, amount);
+function renderDeck() {
+  const container = document.getElementById('deck-container');
+  const hint      = document.getElementById('desk-hint');
+  if (!container) return;
+
+  container.innerHTML = '';
+  hint.classList.toggle('hidden', state.deck.length > 0);
+
+  state.deck.forEach((card, idx) => {
+    const cfg = CARD_TYPES[card.type];
+    const div = document.createElement('div');
+    div.className = `deck-card type-${card.type}`;
+    div.dataset.id = card.id;
+    div.style.setProperty('--rot', `${card.rot}deg`);
+    div.style.left = `${card.x}%`;
+    div.style.top  = `${card.y}%`;
+    div.style.zIndex = idx + 1;
+
+    div.innerHTML = `
+      <div class="dc-top">
+        <div class="dc-thumb">${cfg.icon}</div>
+        <div class="dc-name">${cfg.label}</div>
+      </div>
+      <div class="dc-silver"></div>
+    `;
+
+    if (card._new) {
+      div.classList.add('card-landing');
+      card._new = false;
+      setTimeout(() => div.classList.remove('card-landing'), 500);
+    }
+
+    div.addEventListener('click', () => openCard(card.id));
+    container.appendChild(div);
+  });
+}
+
+function openCard(cardId) {
+  const card = state.deck.find(c => c.id === cardId);
+  if (!card) return;
+  state.currentCard = card;
+  state.revealed    = false;
+  showScratchArea(card.type, card.outcome, card.amount);
 }
 
 function showScratchArea(type, outcome, amount) {
@@ -647,6 +702,7 @@ function exitScratchMode() {
   $scratchArea.classList.add('hidden');
   $tabs.classList.remove('hidden');
   switchTab(state.activeTab);
+  renderDeck();
 }
 
 function initScratchCanvas() {
@@ -746,6 +802,9 @@ function revealCard() {
 
 function applyReward() {
   const { type, outcome, amount } = state.currentCard;
+
+  // Remove this card from the desk
+  state.deck = state.deck.filter(c => c.id !== state.currentCard.id);
 
   const prev = state.balance;
   state.balance = Math.max(0, state.balance + amount);
@@ -939,3 +998,4 @@ recalcJobStats();
 renderUpgrades();
 updateStreakUI();
 switchTab('shop');
+renderDeck();

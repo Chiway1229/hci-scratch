@@ -179,61 +179,220 @@ section h2 {
   text-transform: uppercase;
 }
 
-/* ── Shop ───────────────────────────────────────────────────────────── */
-#card-shop { display: flex; flex-direction: column; gap: 10px; }
+/* ── Shop (split layout: ticket list + desk) ────────────────────────── */
+#shop {
+  padding: 0;
+  background: transparent;
+  border: none;
+  margin-bottom: 16px;
+}
 
-.card-option {
+#shop-split {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  border-radius: 12px;
-  padding: 14px 16px;
-  border: 1px solid transparent;
-  cursor: default;
-  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-  position: relative;
+  gap: 0;
+  min-height: 370px;
+  border-radius: var(--radius);
   overflow: hidden;
-}
-.card-option:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
-.card-cheap   { background: linear-gradient(135deg, rgba(29,94,64,0.55), rgba(45,106,79,0.3)); border-color: rgba(82,183,136,0.25); }
-.card-mid     { background: linear-gradient(135deg, rgba(10,22,40,0.55), rgba(29,53,87,0.3));  border-color: rgba(69,123,157,0.25); }
-.card-premium { background: linear-gradient(135deg, rgba(59,7,100,0.55), rgba(109,43,143,0.3)); border-color: rgba(199,125,255,0.25); }
-
-.card-cheap:hover   { border-color: rgba(82,183,136,0.55);  box-shadow: 0 4px 20px rgba(82,183,136,0.12); }
-.card-mid:hover     { border-color: rgba(69,123,157,0.55);  box-shadow: 0 4px 20px rgba(69,123,157,0.12); }
-.card-premium:hover { border-color: rgba(199,125,255,0.55); box-shadow: 0 4px 20px rgba(199,125,255,0.12); }
-
-.card-preview { font-size: 2.2rem; }
-
-.card-info {
-  flex: 1;
+/* ── Ticket list (left column) ── */
+#ticket-list {
+  width: 130px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  background: rgba(0,0,0,0.35);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 8px;
+  gap: 7px;
 }
-.card-info strong { font-size: 1rem; color: #fff; }
-.card-cost        { font-size: 0.88rem; color: var(--gold); font-weight: 600; }
-.card-info small  { font-size: 0.75rem; color: #666; }
+
+.ticket-option {
+  border-radius: 10px;
+  padding: 10px 7px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid transparent;
+  transition: transform 0.15s, box-shadow 0.2s;
+  cursor: default;
+}
+.ticket-option:hover { transform: translateX(2px) scale(1.02); }
+
+.card-cheap   { background: linear-gradient(135deg, rgba(29,94,64,0.6), rgba(45,106,79,0.35)); border-color: rgba(82,183,136,0.3); }
+.card-mid     { background: linear-gradient(135deg, rgba(10,22,40,0.6), rgba(29,53,87,0.35));  border-color: rgba(69,123,157,0.3); }
+.card-premium { background: linear-gradient(135deg, rgba(59,7,100,0.6), rgba(109,43,143,0.35)); border-color: rgba(199,125,255,0.3); }
+
+.ticket-thumb { font-size: 2rem; line-height: 1.1; }
+.ticket-name  { font-size: 0.75rem; font-weight: bold; color: #eee; margin-top: 1px; }
+.ticket-price { font-size: 0.68rem; color: var(--gold); margin-bottom: 5px; }
 
 .buy-btn {
+  width: 100%;
   background: linear-gradient(135deg, #e94560, #c23152);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  padding: 9px 20px;
-  font-size: 0.88rem;
+  border-radius: 7px;
+  padding: 6px 4px;
+  font-size: 0.75rem;
   cursor: pointer;
   font-weight: bold;
-  transition: opacity 0.2s, transform 0.12s, box-shadow 0.2s;
-  box-shadow: 0 3px 10px rgba(233,69,96,0.35);
+  transition: opacity 0.2s, transform 0.12s;
+  box-shadow: 0 2px 8px rgba(233,69,96,0.3);
 }
-.buy-btn:hover   { opacity: 0.88; box-shadow: 0 4px 16px rgba(233,69,96,0.5); }
-.buy-btn:active  { transform: scale(0.94); }
+.buy-btn:hover   { opacity: 0.88; }
+.buy-btn:active  { transform: scale(0.93); }
 .buy-btn:disabled { opacity: 0.3; cursor: not-allowed; box-shadow: none; }
+
+/* ── Desk / table area (right panel) ── */
+#desk-area {
+  flex: 1;
+  background:
+    radial-gradient(ellipse at 60% 0%, rgba(255,200,100,0.07) 0%, transparent 55%),
+    linear-gradient(178deg, #3d2a14 0%, #4e3520 40%, #3a2810 75%, #291c08 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Wood-grain lines */
+#desk-area::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    97deg,
+    transparent 0px, transparent 6px,
+    rgba(0,0,0,0.045) 6px, rgba(0,0,0,0.045) 7px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+/* Desk edge highlight */
+#desk-area::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255,200,100,0.25), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.desk-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,210,130,0.3);
+  font-size: 0.82rem;
+  text-align: center;
+  line-height: 1.8;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+  z-index: 1;
+}
+
+#deck-container {
+  position: absolute;
+  inset: 8px;
+  z-index: 2;
+}
+
+/* ── Card on desk ── */
+.deck-card {
+  position: absolute;
+  width: 88px;
+  height: 116px;
+  background: linear-gradient(160deg, #f5f2e8, #e8e2d0, #ddd8c0);
+  border-radius: 7px;
+  border: 2px solid rgba(255,255,255,0.75);
+  box-shadow: 3px 5px 16px rgba(0,0,0,0.6), 0 1px 3px rgba(0,0,0,0.3);
+  padding: 8px 6px 6px;
+  text-align: center;
+  cursor: pointer;
+  transform: rotate(var(--rot, 0deg));
+  transition: transform 0.18s, box-shadow 0.18s, filter 0.18s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.deck-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 5px;
+  background: linear-gradient(118deg,
+    transparent 32%, rgba(255,255,255,0.3) 46%,
+    rgba(255,255,255,0.1) 52%, transparent 66%);
+  pointer-events: none;
+}
+.deck-card:hover {
+  transform: rotate(var(--rot, 0deg)) translateY(-10px) scale(1.08);
+  box-shadow: 6px 14px 28px rgba(0,0,0,0.7), 0 0 12px rgba(255,215,0,0.18);
+  filter: brightness(1.06);
+  z-index: 100 !important;
+}
+.deck-card:active { transform: rotate(var(--rot, 0deg)) scale(0.95); }
+
+/* Type-specific card border accent */
+.deck-card.type-cheap   { border-color: rgba(82,183,136,0.7); }
+.deck-card.type-mid     { border-color: rgba(100,160,210,0.7); }
+.deck-card.type-premium { border-color: rgba(199,125,255,0.7); }
+
+.dc-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.dc-thumb { font-size: 2rem; line-height: 1.1; }
+.dc-name  { font-size: 0.62rem; color: #444; font-weight: bold; letter-spacing: 0.3px; }
+
+.dc-silver {
+  width: 100%;
+  height: 40px;
+  border-radius: 4px;
+  background: linear-gradient(165deg, #d8d8d8 0%, #b8b8b8 30%, #d0d0d0 55%, #a0a0a0 100%);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.2), inset 0 -1px 2px rgba(255,255,255,0.4);
+  position: relative;
+  overflow: hidden;
+}
+.dc-silver::after {
+  content: '✦ SCRATCH ✦';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.45rem;
+  font-weight: bold;
+  color: rgba(80,80,80,0.5);
+  letter-spacing: 1px;
+}
+
+/* Landing animation for new cards */
+@keyframes card-land {
+  from { transform: rotate(var(--rot, 0deg)) translateY(-80px) scale(0.5); opacity: 0; }
+  to   { transform: rotate(var(--rot, 0deg)); opacity: 1; }
+}
+.deck-card.card-landing {
+  animation: card-land 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Mobile: stack vertically */
+@media (max-width: 500px) {
+  #shop-split { flex-direction: column; min-height: auto; }
+  #ticket-list { width: 100%; flex-direction: row; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px; gap: 6px; }
+  .ticket-option { flex: 1; }
+  #desk-area { height: 250px; }
+}
 
 /* ── Job center ─────────────────────────────────────────────────────── */
 #job-center {
@@ -286,11 +445,11 @@ section h2 {
   height: 100%;
   border-radius: 50%;
   padding: 14px;
-  background: radial-gradient(circle at 32% 26%,
-    #d4b896 0%, #a8845c 22%, #7c5c38 52%, #503520 80%, #2e1a0a 100%);
+  background: radial-gradient(circle at 33% 28%,
+    #d8d8f4 0%, #b4b4e0 20%, #9090cc 50%, #6464b0 80%, #404090 100%);
   box-shadow:
-    inset 0 -10px 22px rgba(0,0,0,0.35),
-    inset 0 10px 22px rgba(255,200,140,0.18);
+    inset 0 -10px 22px rgba(0,0,0,0.3),
+    inset 0 10px 22px rgba(180,180,255,0.18);
 }
 
 .plate-inner {
@@ -300,12 +459,17 @@ section h2 {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 33%,
-    #c8a87a 0%, #a07848 28%, #7a5430 62%, #4e3018 90%);
+  /* Lavender base + yellow food stains matching reference image */
+  background:
+    radial-gradient(ellipse at 24% 30%, rgba(255,195,35,0.78) 0%, rgba(255,195,35,0.45) 11%, transparent 24%),
+    radial-gradient(ellipse at 74% 26%, rgba(255,175,20,0.68) 0%, rgba(255,175,20,0.38) 9%,  transparent 21%),
+    radial-gradient(circle at 40% 58%, rgba(255,208,50,0.48) 0%, transparent 11%),
+    radial-gradient(circle at 56% 63%, rgba(255,208,50,0.42) 0%, transparent 8%),
+    radial-gradient(circle at 40% 36%, #c4c4ec 0%, #9898d8 38%, #6c6cc0 68%, #4848a8 90%);
   box-shadow:
-    inset 8px -6px 18px rgba(80,40,0,0.35),
-    inset -6px 8px 14px rgba(40,18,0,0.28),
-    inset 0 5px 14px rgba(0,0,0,0.25);
+    inset 6px -5px 14px rgba(50,40,120,0.28),
+    inset -5px 7px 12px rgba(160,140,240,0.14),
+    inset 0 4px 14px rgba(0,0,0,0.2);
 }
 
 /* Sponge + plate stacked */

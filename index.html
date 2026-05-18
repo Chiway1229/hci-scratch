@@ -41,35 +41,36 @@
 
     <!-- Shop -->
     <section id="shop">
-      <h2>選擇票券</h2>
-      <div id="card-shop">
-        <div class="card-option card-cheap">
-          <div class="card-preview">🎟️</div>
-          <div class="card-info">
-            <strong>基本款</strong>
-            <span class="card-cost">50 籌碼</span>
-            <small>獎池 −100 ~ +300</small>
+      <div id="shop-split">
+
+        <!-- Left: ticket tier selector -->
+        <div id="ticket-list">
+          <div class="ticket-option card-cheap">
+            <div class="ticket-thumb">🎟️</div>
+            <div class="ticket-name">基本款</div>
+            <div class="ticket-price">50 💰</div>
+            <button class="buy-btn" data-type="cheap">購買</button>
           </div>
-          <button class="buy-btn" data-type="cheap">購買</button>
-        </div>
-        <div class="card-option card-mid">
-          <div class="card-preview">🎫</div>
-          <div class="card-info">
-            <strong>進階款</strong>
-            <span class="card-cost">150 籌碼</span>
-            <small>獎池 −200 ~ +800</small>
+          <div class="ticket-option card-mid">
+            <div class="ticket-thumb">🎫</div>
+            <div class="ticket-name">進階款</div>
+            <div class="ticket-price">150 💰</div>
+            <button class="buy-btn" data-type="mid">購買</button>
           </div>
-          <button class="buy-btn" data-type="mid">購買</button>
-        </div>
-        <div class="card-option card-premium">
-          <div class="card-preview">💎</div>
-          <div class="card-info">
-            <strong>豪華款</strong>
-            <span class="card-cost">500 籌碼</span>
-            <small>獎池 −500 ~ +3000</small>
+          <div class="ticket-option card-premium">
+            <div class="ticket-thumb">💎</div>
+            <div class="ticket-name">豪華款</div>
+            <div class="ticket-price">500 💰</div>
+            <button class="buy-btn" data-type="premium">購買</button>
           </div>
-          <button class="buy-btn" data-type="premium">購買</button>
         </div>
+
+        <!-- Right: desk surface — purchased cards appear here -->
+        <div id="desk-area">
+          <div id="deck-container"></div>
+          <p class="desk-hint" id="desk-hint">買張票放到桌上<br>點一下開始刮！</p>
+        </div>
+
       </div>
     </section>
 
