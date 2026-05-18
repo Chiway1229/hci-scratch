@@ -308,29 +308,66 @@ let state = {
 
 // ── DOM REFS ─────────────────────────────────────────────────────────────────
 
-const $balance      = document.getElementById('balance');
-const $shop         = document.getElementById('shop');
-const $jobCenter    = document.getElementById('job-center');
-const $scratchArea  = document.getElementById('scratch-area');
-const $historyList  = document.getElementById('history-list');
-const $overlay      = document.getElementById('overlay');
-const $canvas       = document.getElementById('scratch-canvas');
-const $cardResult   = document.getElementById('card-result');
-const $progressBar  = document.getElementById('scratch-progress-bar');
-const $progressLbl  = document.getElementById('scratch-progress-label');
-const $statsGames   = document.getElementById('stat-games');
-const $statsWR      = document.getElementById('stat-winrate');
-const $statsBest    = document.getElementById('stat-best');
-const $statsNet     = document.getElementById('stat-net');
-const $soundBtn     = document.getElementById('sound-toggle');
-const $flash        = document.getElementById('flash-overlay');
-const $shine        = document.querySelector('.card-shine');
-const $tabs         = document.getElementById('tabs');
-const $washBtn      = document.getElementById('wash-btn');
-const $jobClickP    = document.getElementById('job-click-power');
+const $balance       = document.getElementById('balance');
+const $shop          = document.getElementById('shop');
+const $jobCenter     = document.getElementById('job-center');
+const $scratchArea   = document.getElementById('scratch-area');
+const $overlay       = document.getElementById('overlay');
+const $canvas        = document.getElementById('scratch-canvas');
+const $cardResult    = document.getElementById('card-result');
+const $progressBar   = document.getElementById('scratch-progress-bar');
+const $progressLbl   = document.getElementById('scratch-progress-label');
+const $soundBtn      = document.getElementById('sound-toggle');
+const $flash         = document.getElementById('flash-overlay');
+const $shine         = document.querySelector('.card-shine');
+const $tabs          = document.getElementById('tabs');
+const $backBtn       = document.getElementById('back-btn');
+const $washBtn       = document.getElementById('wash-btn');
+const $jobClickP     = document.getElementById('job-click-power');
 const $jobAutoIncome = document.getElementById('job-auto-income');
-const $upgradesList = document.getElementById('upgrades-list');
-const ctx           = $canvas.getContext('2d');
+const $upgradesList  = document.getElementById('upgrades-list');
+const ctx            = $canvas.getContext('2d');
+
+// ── PERSISTENCE ──────────────────────────────────────────────────────────────
+
+const SAVE_KEY = 'scratchy_save';
+
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      balance: state.balance,
+      stats:   { ...state.stats },
+      job: {
+        upgrades:      { ...state.job.upgrades },
+        totalWashed:   state.job.totalWashed,
+        bankruptShown: state.job.bankruptShown,
+      },
+    }));
+  } catch { /* storage unavailable — skip silently */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (typeof s.balance === 'number') state.balance = s.balance;
+    if (s.stats) {
+      state.stats.games   = s.stats.games   ?? 0;
+      state.stats.wins    = s.stats.wins    ?? 0;
+      state.stats.bestWin = s.stats.bestWin ?? 0;
+      state.stats.streak  = s.stats.streak  ?? 0;
+    }
+    if (s.job) {
+      state.job.upgrades      = s.job.upgrades      ?? {};
+      state.job.totalWashed   = s.job.totalWashed   ?? 0;
+      state.job.bankruptShown = s.job.bankruptShown ?? false;
+    }
+  } catch { /* corrupted save — start fresh */ }
+}
+
+window.addEventListener('beforeunload', saveState);
+setInterval(saveState, 15_000); // catch auto-income drift
 
 // ── BALANCE ANIMATION ────────────────────────────────────────────────────────
 
@@ -391,15 +428,7 @@ function showFloatingText(text, anchor, color = '#67e8f9') {
 
 // ── STATS ────────────────────────────────────────────────────────────────────
 
-function updateStats() {
-  const s = state.stats;
-  $statsGames.textContent = s.games;
-  $statsWR.textContent    = s.games ? `${Math.round(s.wins / s.games * 100)}%` : '—';
-  $statsBest.textContent  = s.bestWin ? `+${s.bestWin}` : '—';
-  const net = state.balance - 1000;
-  $statsNet.textContent   = net >= 0 ? `+${net}` : `${net}`;
-  $statsNet.className     = `stat-val ${net >= 0 ? 'green' : 'red'}`;
-}
+function updateStats() { /* stat bar removed — no-op kept for call-site compatibility */ }
 
 // ── JOB / UPGRADES ───────────────────────────────────────────────────────────
 
@@ -483,7 +512,7 @@ function buyUpgrade(key) {
   recalcJobStats();
   renderUpgrades();
   SFX.upgrade();
-  updateStats();
+  saveState();
 
   const btn = $upgradesList.querySelector(`.up-buy[data-key="${key}"]`);
   if (btn) {
@@ -500,8 +529,8 @@ function washDish() {
   state.job.totalWashed++;
 
   animateBalance(prev, state.balance);
-  updateStats();
   SFX.wash();
+  saveState();
 
   $washBtn.classList.remove('bounce');
   void $washBtn.offsetWidth;
@@ -585,6 +614,7 @@ function showScratchArea(type, outcome, amount) {
   $jobCenter.classList.add('hidden');
   $tabs.classList.add('hidden');
   $scratchArea.classList.remove('hidden');
+  $backBtn.classList.add('hidden');
   updateScreenChrome();
   $cardResult.classList.add('hidden');
   $cardResult.style.boxShadow = '';
@@ -711,6 +741,7 @@ function revealCard() {
   $cardResult.style.boxShadow  = `0 0 40px ${oc.glow}, 0 0 80px ${oc.glow}50`;
 
   applyReward();
+  $backBtn.classList.remove('hidden');
 }
 
 function applyReward() {
@@ -736,9 +767,8 @@ function applyReward() {
     updateStreakUI();
   }
 
-  updateStats();
-  addHistory(type, outcome, amount);
   triggerEffects(outcome);
+  saveState();
 
   if (state.balance === 0 && !state.job.bankruptShown) {
     state.job.bankruptShown = true;
@@ -837,37 +867,12 @@ function pickChest(idx) {
     document.getElementById('jackpot-result-amount').textContent = `+${amount.toLocaleString()} 籌碼`;
     document.getElementById('jackpot-result').classList.remove('hidden');
 
+    saveState();
     SFX.bigWin();
     flash('rgba(255,215,0,0.45)');
     Particles.emit('jackpot', window.innerWidth / 2, window.innerHeight / 3);
     Particles.emit('bigWin', window.innerWidth / 2, window.innerHeight / 2);
   }, 500);
-}
-
-// ── HISTORY ───────────────────────────────────────────────────────────────────
-
-function addHistory(type, outcome, amount) {
-  const cfg  = CARD_TYPES[type];
-  const oc   = OUTCOME_CFG[outcome];
-  const empty = $historyList.querySelector('.history-empty');
-  if (empty) empty.remove();
-
-  const li  = document.createElement('li');
-  const cls = amount > 0 ? 'win' : amount < 0 ? 'lose' : 'zero';
-  li.className = `history-item ${cls}`;
-
-  const now = new Date();
-  const t   = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
-  const amt = amount > 0 ? `+${amount}` : `${amount}`;
-
-  li.innerHTML = `
-    <span class="h-icon">${cfg.icon}</span>
-    <span class="h-label">${cfg.label}</span>
-    <span class="h-outcome">${oc.symbols[0]}</span>
-    <span class="h-amount ${cls}">${amt}</span>
-    <span class="h-time">${t}</span>
-  `;
-  $historyList.prepend(li);
 }
 
 // ── MODAL ────────────────────────────────────────────────────────────────────
@@ -898,8 +903,7 @@ document.querySelectorAll('.buy-btn').forEach(btn =>
   btn.addEventListener('click', () => buyCard(btn.dataset.type))
 );
 
-document.getElementById('back-btn').addEventListener('click', () => {
-  if (!state.revealed && state.currentCard) applyReward();
+$backBtn.addEventListener('click', () => {
   exitScratchMode();
 });
 
@@ -928,9 +932,10 @@ document.getElementById('jackpot-close').addEventListener('click', () => {
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
+loadState();
 Particles.init();
 animateBalance(0, state.balance);
-updateStats();
 recalcJobStats();
 renderUpgrades();
+updateStreakUI();
 switchTab('shop');

@@ -53,23 +53,35 @@ body {
   padding: 18px 16px 64px;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────── */
+/* ── Header (full-width, sticky at top) ─────────────────────────────── */
 header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  width: 100%;
+  background: rgba(10, 8, 28, 0.96);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 0;
+}
+
+.header-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 11px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 20px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  margin-bottom: 12px;
-  border: 1px solid var(--border);
-  backdrop-filter: blur(8px);
 }
 
-header h1 {
-  font-size: 1.55rem;
-  letter-spacing: 3px;
-  text-shadow: 0 0 20px rgba(255,215,0,0.4);
+#app-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #ffd700 30%, #ff9a00 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 #header-right {
@@ -120,45 +132,7 @@ header h1 {
 #sound-toggle:hover  { background: rgba(255,255,255,0.1); }
 #sound-toggle:active { transform: scale(0.9); }
 
-/* ── Stats bar ──────────────────────────────────────────────────────── */
-#stats-bar {
-  display: flex;
-  justify-content: space-around;
-  gap: 4px;
-  margin-bottom: 14px;
-  padding: 10px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.stat-label {
-  font-size: 0.66rem;
-  color: #777;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-
-.stat-val {
-  font-size: 0.92rem;
-  font-weight: bold;
-  color: #fff;
-}
-.stat-val.green { color: var(--green); }
-.stat-val.red   { color: var(--red);   }
-
-/* Focus mode: when the job tab is active, hide game stats chrome so the
-   plate becomes the visual centerpiece (cookie-clicker style). */
-body.focus-job #stats-bar,
+/* Focus mode: when job tab is active, hide scratch-game chrome. */
 body.focus-job #streak-banner { display: none !important; }
 
 /* ── Tabs ───────────────────────────────────────────────────────────── */
@@ -312,11 +286,11 @@ section h2 {
   height: 100%;
   border-radius: 50%;
   padding: 14px;
-  background: radial-gradient(circle at 35% 28%,
-    #ffffff 0%, #ededed 16%, #cfcfcf 42%, #9c9c9c 78%, #6b6b6b 100%);
+  background: radial-gradient(circle at 32% 26%,
+    #d4b896 0%, #a8845c 22%, #7c5c38 52%, #503520 80%, #2e1a0a 100%);
   box-shadow:
-    inset 0 -10px 22px rgba(0,0,0,0.22),
-    inset 0 12px 26px rgba(255,255,255,0.55);
+    inset 0 -10px 22px rgba(0,0,0,0.35),
+    inset 0 10px 22px rgba(255,200,140,0.18);
 }
 
 .plate-inner {
@@ -326,20 +300,42 @@ section h2 {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle at 42% 36%,
-    #fafafa 0%, #e4e4e4 30%, #c0c0c0 68%, #8e8e8e 100%);
+  background: radial-gradient(circle at 38% 33%,
+    #c8a87a 0%, #a07848 28%, #7a5430 62%, #4e3018 90%);
   box-shadow:
-    inset 0 5px 14px rgba(0,0,0,0.16),
-    inset 0 -3px 8px rgba(255,255,255,0.4);
+    inset 8px -6px 18px rgba(80,40,0,0.35),
+    inset -6px 8px 14px rgba(40,18,0,0.28),
+    inset 0 5px 14px rgba(0,0,0,0.25);
 }
 
-.wash-icon {
-  font-size: 4.4rem;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
-  transition: transform 0.22s ease;
-  display: inline-block;
+/* Sponge + plate stacked */
+.wash-stack {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
-#wash-btn:hover .wash-icon { transform: scale(1.06) rotate(-6deg); }
+.plate-emoji {
+  font-size: 4.6rem;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  display: block;
+}
+.sponge-emoji {
+  position: absolute;
+  bottom: -6px;
+  right: -18px;
+  font-size: 2.2rem;
+  transform: rotate(-22deg);
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+  animation: sponge-wiggle 2.8s ease-in-out infinite;
+}
+@keyframes sponge-wiggle {
+  0%, 100% { transform: rotate(-22deg) translateY(0); }
+  50%       { transform: rotate(-15deg) translateY(-3px); }
+}
+#wash-btn:hover .plate-emoji  { transform: scale(1.04); transition: transform 0.2s; }
+#wash-btn:hover .sponge-emoji { animation-duration: 0.9s; }
 
 @keyframes wash-bounce {
   0%, 100% { transform: scale(1) rotate(0deg); }
