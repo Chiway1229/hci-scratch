@@ -76,27 +76,27 @@
 
     <!-- Job center -->
     <section id="job-center" class="hidden">
-      <div class="job-stage">
-        <button id="wash-btn" aria-label="洗一個碗">
-          <span class="plate-rim">
-            <span class="plate-inner">
-              <span class="wash-stack">
-                <span class="plate-emoji">🍽️</span>
-                <span class="sponge-emoji">🧽</span>
-              </span>
-            </span>
-          </span>
-        </button>
-        <div id="job-summary">
-          <span><strong id="job-click-power">+1</strong><span class="js-unit">／次</span></span>
-          <span class="dot">·</span>
-          <span><strong id="job-auto-income">+0</strong><span class="js-unit">／秒</span></span>
+      <div id="job-split">
+        <div id="upgrades-panel">
+          <h3 class="upgrades-title">升級道具</h3>
+          <div id="upgrades-list"></div>
         </div>
-      </div>
-
-      <div id="upgrades-wrap">
-        <h3 class="upgrades-title">升級道具</h3>
-        <div id="upgrades-list"></div>
+        <div id="wash-panel">
+          <div class="job-stage">
+            <button id="wash-btn" aria-label="洗一個碗">
+              <span class="plate-rim">
+                <span class="plate-inner">
+                  <span class="wash-icon">🧽</span>
+                </span>
+              </span>
+            </button>
+            <div id="job-summary">
+              <span><strong id="job-click-power">+1</strong><span class="js-unit">／次</span></span>
+              <span class="dot">·</span>
+              <span><strong id="job-auto-income">+0</strong><span class="js-unit">／秒</span></span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

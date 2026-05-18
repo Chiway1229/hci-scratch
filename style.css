@@ -17,7 +17,14 @@
 
 body {
   font-family: 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-  background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 50%, var(--bg3) 100%);
+  background-color: #0c0a1e;
+  background-image:
+    radial-gradient(ellipse 70% 60% at 8%  72%, rgba(110,40,230,0.22) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 92% 18%, rgba(30,60,210,0.18)  0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 50% 100%,rgba(80,30,180,0.15)  0%, transparent 45%),
+    radial-gradient(rgba(255,255,255,0.022) 1px, transparent 1px),
+    linear-gradient(150deg, #0c0a1e 0%, #14102e 30%, #0f0d28 60%, #09071a 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 100% 100%;
   min-height: 100vh;
   color: var(--text);
   overflow-x: hidden;
@@ -48,9 +55,8 @@ body {
 
 /* ── Layout ─────────────────────────────────────────────────────────── */
 #app {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 18px 16px 64px;
+  width: 100%;
+  padding: 14px clamp(12px, 3.5vw, 52px) 48px;
 }
 
 /* ── Header (full-width, sticky at top) ─────────────────────────────── */
@@ -66,9 +72,8 @@ header {
 }
 
 .header-inner {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 11px 16px;
+  width: 100%;
+  padding: 11px clamp(12px, 3.5vw, 52px);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -138,28 +143,30 @@ body.focus-job #streak-banner { display: none !important; }
 /* ── Tabs ───────────────────────────────────────────────────────────── */
 .tabs {
   display: flex;
-  gap: 8px;
+  gap: 0;
   margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
 }
 .tab-btn {
   flex: 1;
-  padding: 10px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: #aaa;
+  padding: 11px 16px;
+  background: rgba(255,255,255,0.04);
+  border: none;
+  color: #888;
   font-size: 0.95rem;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition: background 0.2s, color 0.2s;
   letter-spacing: 1px;
 }
-.tab-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.tab-btn + .tab-btn { border-left: 1px solid var(--border); }
+.tab-btn:hover { background: rgba(255,255,255,0.08); color: #ddd; }
 .tab-btn.active {
-  background: linear-gradient(135deg, rgba(233,69,96,0.25), rgba(245,158,11,0.2));
+  background: linear-gradient(135deg, rgba(180,40,80,0.35), rgba(180,80,10,0.28));
   color: #fff;
-  border-color: rgba(245,158,11,0.5);
-  box-shadow: 0 4px 14px rgba(245,158,11,0.15);
+  box-shadow: inset 0 -2px 0 rgba(245,158,11,0.5);
 }
 
 /* ── Section ────────────────────────────────────────────────────────── */
@@ -190,7 +197,8 @@ section h2 {
 #shop-split {
   display: flex;
   gap: 0;
-  min-height: 370px;
+  height: calc(100vh - 160px);
+  min-height: 420px;
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
@@ -392,40 +400,71 @@ section h2 {
   #ticket-list { width: 100%; flex-direction: row; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 8px; gap: 6px; }
   .ticket-option { flex: 1; }
   #desk-area { height: 250px; }
+  #job-split { flex-direction: column; min-height: auto; }
+  #upgrades-panel { width: 100%; height: 180px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  #wash-panel { flex: 1; min-height: 260px; }
 }
 
-/* ── Job center ─────────────────────────────────────────────────────── */
+/* ── Job center — split layout ──────────────────────────────────────── */
 #job-center {
+  padding: 0;
+  background: transparent;
+  border: none;
+  margin-bottom: 0;
+}
+
+#job-split {
+  display: flex;
+  gap: 0;
+  height: calc(100vh - 160px);
+  min-height: 420px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* Left: upgrades list */
+#upgrades-panel {
+  width: clamp(220px, 28%, 340px);
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.38);
+  border-right: 1px solid rgba(255,255,255,0.06);
+  overflow-y: auto;
+  padding: 14px 11px;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a3d transparent;
+}
+#upgrades-panel::-webkit-scrollbar { width: 4px; }
+#upgrades-panel::-webkit-scrollbar-thumb { background: #2a2a3d; border-radius: 4px; }
+
+/* Right: wash interaction */
+#wash-panel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   overflow: hidden;
-  padding-top: 8px;
-}
-#job-center::before {
-  content: '';
-  position: absolute;
-  inset: 0;
   background:
-    radial-gradient(ellipse at 50% 18%, rgba(103,232,249,0.10) 0%, transparent 55%),
-    repeating-conic-gradient(from -15deg at 50% 22%,
-      rgba(255,255,255,0.018) 0deg 8deg,
-      transparent 8deg 18deg);
-  pointer-events: none;
-  z-index: 0;
+    radial-gradient(ellipse 70% 55% at 50% 35%, rgba(103,232,249,0.10) 0%, transparent 60%),
+    repeating-conic-gradient(from -18deg at 50% 28%,
+      rgba(255,255,255,0.015) 0deg 9deg, transparent 9deg 20deg),
+    linear-gradient(160deg, #0a1628 0%, #0d1f3c 50%, #080f1e 100%);
 }
 
 .job-stage {
-  position: relative;
-  z-index: 1;
-  padding: 18px 0 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 22px;
+  z-index: 1;
+  padding: 20px;
 }
 
+/* Wash button — circular plate */
 #wash-btn {
-  width: 220px;
-  height: 220px;
+  width: clamp(180px, 22vw, 260px);
+  height: clamp(180px, 22vw, 260px);
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -434,8 +473,8 @@ section h2 {
   user-select: none;
   transition: transform 0.08s;
   display: block;
-  filter: drop-shadow(0 14px 30px rgba(0,0,0,0.55))
-          drop-shadow(0 0 28px rgba(103,232,249,0.15));
+  filter: drop-shadow(0 16px 32px rgba(0,0,0,0.6))
+          drop-shadow(0 0 30px rgba(103,232,249,0.14));
 }
 #wash-btn:active { transform: scale(0.95); }
 
@@ -459,7 +498,6 @@ section h2 {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  /* Lavender base + yellow food stains matching reference image */
   background:
     radial-gradient(ellipse at 24% 30%, rgba(255,195,35,0.78) 0%, rgba(255,195,35,0.45) 11%, transparent 24%),
     radial-gradient(ellipse at 74% 26%, rgba(255,175,20,0.68) 0%, rgba(255,175,20,0.38) 9%,  transparent 21%),
@@ -472,34 +510,19 @@ section h2 {
     inset 0 4px 14px rgba(0,0,0,0.2);
 }
 
-/* Sponge + plate stacked */
-.wash-stack {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-.plate-emoji {
-  font-size: 4.6rem;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
-  display: block;
-}
-.sponge-emoji {
-  position: absolute;
-  bottom: -6px;
-  right: -18px;
-  font-size: 2.2rem;
-  transform: rotate(-22deg);
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
+/* Sponge — sole element inside plate */
+.wash-icon {
+  font-size: clamp(3.6rem, 5vw, 5.2rem);
+  display: inline-block;
   animation: sponge-wiggle 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.45));
 }
+#wash-btn:hover .wash-icon { animation-duration: 0.75s; }
+
 @keyframes sponge-wiggle {
-  0%, 100% { transform: rotate(-22deg) translateY(0); }
-  50%       { transform: rotate(-15deg) translateY(-3px); }
+  0%, 100% { transform: rotate(-6deg) translateY(0); }
+  50%       { transform: rotate(6deg) translateY(-5px); }
 }
-#wash-btn:hover .plate-emoji  { transform: scale(1.04); transition: transform 0.2s; }
-#wash-btn:hover .sponge-emoji { animation-duration: 0.9s; }
 
 @keyframes wash-bounce {
   0%, 100% { transform: scale(1) rotate(0deg); }
@@ -512,17 +535,17 @@ section h2 {
   display: flex;
   gap: 14px;
   align-items: baseline;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   color: #999;
   letter-spacing: 0.5px;
 }
 #job-summary strong {
   color: #67e8f9;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   margin-right: 2px;
 }
-#job-summary .js-unit { color: #777; font-size: 0.78rem; margin-left: 1px; }
+#job-summary .js-unit { color: #777; font-size: 0.8rem; margin-left: 1px; }
 #job-summary .dot     { color: #444; }
 
 .upgrades-title {
