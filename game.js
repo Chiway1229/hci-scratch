@@ -584,36 +584,34 @@ function updateBodyWealth() {
   updateDeskDecorations();
 }
 
-// Desk decorations — mix of CSS-drawn cobwebs and emoji items based on wealth level
+// Desk decorations — plant sprite index: 0=lush, 4=nearly-dead (left→right in plants.png)
 const DESK_DECO_LEVELS = {
   'wealth-debt': [
-    { type: 'cobweb', corner: 'top-left',     size: 110 },
-    { type: 'cobweb', corner: 'top-right',    size: 110 },
+    { type: 'cobweb', corner: 'top-left',     size: 120 },
+    { type: 'cobweb', corner: 'top-right',    size: 120 },
     { type: 'cobweb', corner: 'bottom-left',  size: 90  },
     { type: 'cobweb', corner: 'bottom-right', size: 90  },
-    { type: 'emoji',  text: '🕷️', left: '18%', top: '38%', rot: 12, size: '1.5rem' },
+    { type: 'plant', plantIdx: 4, style: { left: '4%',  bottom: '6%' } },
+    { type: 'img', src: 'assets/decos/beer-can.png',
+      style: { width: '55px', left: '28%', bottom: '8%', transform: 'rotate(-18deg)' } },
   ],
   'wealth-poor': [
-    { type: 'cobweb', corner: 'top-left',     size: 90 },
+    { type: 'cobweb', corner: 'top-left',  size: 90 },
     { type: 'cobweb', corner: 'bottom-right', size: 80 },
-    { type: 'emoji',  text: '🥀', left: '10%', top: '76%', rot: -8, size: '1.6rem' },
+    { type: 'plant', plantIdx: 3, style: { left: '4%', bottom: '6%' } },
   ],
   'wealth-medium': [
-    { type: 'emoji', text: '🪴', left: '6%',  top: '8%',  rot: -5, size: '1.8rem' },
-    { type: 'emoji', text: '☕', left: '82%', top: '76%', rot: 8,  size: '1.5rem' },
+    { type: 'plant', plantIdx: 2, style: { left: '4%', bottom: '6%' } },
   ],
   'wealth-rich': [
-    { type: 'emoji', text: '🪴', left: '6%',  top: '6%',  rot: -5, size: '2rem'   },
-    { type: 'emoji', text: '🌸', left: '82%', top: '8%',  rot: 7,  size: '1.6rem' },
-    { type: 'emoji', text: '🕯️', left: '76%', top: '72%', rot: 0,  size: '1.7rem' },
-    { type: 'emoji', text: '📜', left: '8%',  top: '78%', rot: -5, size: '1.5rem' },
+    { type: 'plant', plantIdx: 1, style: { left: '4%', bottom: '6%' } },
+    { type: 'emoji', text: '🕯️', style: { left: '76%', top: '70%', fontSize: '1.7rem' } },
   ],
   'wealth-goal': [
-    { type: 'emoji', text: '🏆', left: '6%',  top: '6%',  rot: -4, size: '2.2rem' },
-    { type: 'emoji', text: '💎', left: '82%', top: '8%',  rot: 6,  size: '1.8rem' },
-    { type: 'emoji', text: '👑', left: '46%', top: '4%',  rot: 0,  size: '1.9rem' },
-    { type: 'emoji', text: '🪙', left: '12%', top: '78%', rot: -8, size: '1.7rem' },
-    { type: 'emoji', text: '🌟', left: '76%', top: '74%', rot: 4,  size: '1.8rem' },
+    { type: 'plant', plantIdx: 0, style: { left: '4%', bottom: '6%' } },
+    { type: 'emoji', text: '🏆', style: { left: '82%', top: '8%',  fontSize: '2.2rem', transform: 'rotate(5deg)' } },
+    { type: 'emoji', text: '💎', style: { left: '46%', top: '4%',  fontSize: '1.9rem' } },
+    { type: 'emoji', text: '🪙', style: { left: '76%', top: '74%', fontSize: '1.8rem', transform: 'rotate(4deg)' } },
   ],
 };
 
@@ -651,24 +649,35 @@ function updateDeskDecorations() {
 
   const decos = DESK_DECO_LEVELS[wealthClass];
   if (!decos) return;
+
   decos.forEach(d => {
-    const el = document.createElement('div');
+    let el;
     if (d.type === 'cobweb') {
+      el = document.createElement('div');
       el.className = 'desk-cobweb';
       el.innerHTML = COBWEB_SVG;
-      const pos = COBWEB_CORNERS[d.corner];
-      Object.assign(el.style, pos);
+      Object.assign(el.style, COBWEB_CORNERS[d.corner]);
       el.style.width  = `${d.size}px`;
       el.style.height = `${d.size}px`;
-    } else {
+    } else if (d.type === 'plant') {
+      el = document.createElement('div');
+      el.className = 'desk-plant';
+      // 5 plants equally spaced: plant 0→0%, 1→25%, 2→50%, 3→75%, 4→100%
+      el.style.backgroundPosition = `${d.plantIdx * 25}% bottom`;
+      Object.assign(el.style, d.style);
+    } else if (d.type === 'img') {
+      el = document.createElement('img');
+      el.className = 'desk-img-deco';
+      el.src = d.src;
+      el.alt = '';
+      Object.assign(el.style, d.style);
+    } else if (d.type === 'emoji') {
+      el = document.createElement('div');
       el.className = 'desk-deco';
       el.textContent = d.text;
-      el.style.left      = d.left;
-      el.style.top       = d.top;
-      el.style.transform = `rotate(${d.rot}deg)`;
-      if (d.size) el.style.fontSize = d.size;
+      Object.assign(el.style, d.style);
     }
-    container.appendChild(el);
+    if (el) container.appendChild(el);
   });
 }
 
