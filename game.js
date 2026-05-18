@@ -2,22 +2,25 @@
 
 const CARD_TYPES = {
   cheap:   { cost: 50,    label: '晴天', icon: '🎟️', color: '#9e9e9e', unlockAt: 0,
-    weights: [{ outcome:'zero', prob:0.55 }, { outcome:'small', range:[65,200],  prob:0.33 }, { outcome:'big', range:[260,600],   prob:0.12 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[65,200],  prob:0.84 }, { outcome:'big', range:[260,600],   prob:0.01 }] },
   mid:     { cost: 200,   label: '彩虹', icon: '🎫', color: '#4a90d9', unlockAt: 0,
-    weights: [{ outcome:'zero', prob:0.50 }, { outcome:'small', range:[240,600], prob:0.35 }, { outcome:'big', range:[700,1800],  prob:0.15 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[240,600], prob:0.84 }, { outcome:'big', range:[700,1800],  prob:0.01 }] },
   deluxe:  { cost: 500,   label: '月光', icon: '🌟', color: '#a855f7', unlockAt: 0,
-    weights: [{ outcome:'zero', prob:0.46 }, { outcome:'small', range:[600,1400],prob:0.35 }, { outcome:'big', range:[1800,5000], prob:0.19 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[600,1400],prob:0.84 }, { outcome:'big', range:[1800,5000], prob:0.01 }] },
   premium: { cost: 1200,  label: '星空', icon: '💎', color: '#c084fc', unlockAt: 0,
-    weights: [{ outcome:'zero', prob:0.42 }, { outcome:'small', range:[1400,3200],prob:0.35 }, { outcome:'big', range:[4500,12000],prob:0.23 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[1400,3200],prob:0.84 }, { outcome:'big', range:[4500,12000],prob:0.01 }] },
   elite:   { cost: 3000,  label: '流星', icon: '🥇', color: '#f59e0b', unlockAt: 1,
-    weights: [{ outcome:'zero', prob:0.38 }, { outcome:'small', range:[3500,8000],prob:0.35 }, { outcome:'big', range:[10000,28000],prob:0.27 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[3500,8000],prob:0.84 }, { outcome:'big', range:[10000,28000],prob:0.01 }] },
   legend:  { cost: 7500,  label: '極光', icon: '🏆', color: '#f97316', unlockAt: 1,
-    weights: [{ outcome:'zero', prob:0.35 }, { outcome:'small', range:[8500,20000],prob:0.35 }, { outcome:'big', range:[25000,70000],prob:0.30 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[8500,20000],prob:0.84 }, { outcome:'big', range:[25000,70000],prob:0.01 }] },
   mythic:  { cost: 18000, label: '日蝕', icon: '👑', color: '#ec4899', unlockAt: 2,
-    weights: [{ outcome:'zero', prob:0.32 }, { outcome:'small', range:[20000,50000],prob:0.35 }, { outcome:'big', range:[60000,180000],prob:0.33 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[20000,50000],prob:0.84 }, { outcome:'big', range:[60000,180000],prob:0.01 }] },
   divine:  { cost: 50000, label: '天際', icon: '✨', color: '#ffd700', unlockAt: 2,
-    weights: [{ outcome:'zero', prob:0.28 }, { outcome:'small', range:[55000,130000],prob:0.35 }, { outcome:'big', range:[160000,500000],prob:0.37 }] },
+    weights: [{ outcome:'zero', prob:0.15 }, { outcome:'small', range:[55000,130000],prob:0.84 }, { outcome:'big', range:[160000,500000],prob:0.01 }] },
 };
+
+// Sequential tier order — each prestige cycle you must buy tier N before tier N+1 unlocks
+const TIER_ORDER = ['cheap','mid','deluxe','premium','elite','legend','mythic','divine'];
 
 const OUTCOME_CFG = {
   lose:  { label: '扣錢！',  symbols: ['💸','📉','💀'], glow: '#f87171', amtClass: 'amount-lose' },
@@ -371,6 +374,7 @@ let state = {
   },
   activeTab: 'shop',
   achievements: [],
+  tierUnlocks: ['cheap'], // tiers available this prestige cycle; expands as you buy up
 };
 
 // Goal scaling — each cycle the bar grows ~2.5× while multiplier only +0.1×
@@ -433,6 +437,7 @@ function saveState() {
       },
       prestige: { ...state.prestige },
       achievements: [...state.achievements],
+      tierUnlocks: [...state.tierUnlocks],
     }));
   } catch { /* storage unavailable — skip silently */ }
 }
@@ -471,6 +476,7 @@ function loadState() {
       state.prestige.multiplier = s.prestige.multiplier ?? 1.0;
     }
     state.achievements = s.achievements ?? [];
+    state.tierUnlocks  = s.tierUnlocks  ?? ['cheap'];
   } catch { /* corrupted save — start fresh */ }
 }
 
@@ -906,6 +912,7 @@ function buyCard(type) {
   SFX.resume();
   const cfg = CARD_TYPES[type];
   if (cfg.unlockAt > state.prestige.level) return;
+  if (!state.tierUnlocks.includes(type)) return; // not yet unlocked this cycle
   if (state.balance < 0) {
     showModal('💸', '負債中', `餘額為負，先點右上角 📱 借貸，洗完碗再來買！`);
     return;
@@ -934,6 +941,16 @@ function buyCard(type) {
     y:   5  + Math.random() * 52,
     _new: true,
   });
+
+  // Sequential unlock: buying tier N unlocks tier N+1 (if prestige allows)
+  const tierIdx = TIER_ORDER.indexOf(type);
+  const nextTier = TIER_ORDER[tierIdx + 1];
+  if (nextTier && !state.tierUnlocks.includes(nextTier) &&
+      CARD_TYPES[nextTier].unlockAt <= state.prestige.level) {
+    state.tierUnlocks.push(nextTier);
+    renderTicketList();
+    showFloatingText(`解鎖：${CARD_TYPES[nextTier].label}！`, document.getElementById('ticket-list') || document.body, '#4ade80');
+  }
 
   state.stats.cardTypesBought[type] = (state.stats.cardTypesBought[type] || 0) + 1;
   const total = Object.values(state.stats.cardTypesBought).reduce((a,b) => a+b, 0);
@@ -994,13 +1011,21 @@ function renderTicketList() {
   if (!list) return;
   list.innerHTML = '';
   for (const [type, cfg] of Object.entries(CARD_TYPES)) {
-    const locked = cfg.unlockAt > state.prestige.level;
+    const prestigeLocked = cfg.unlockAt > state.prestige.level;
+    const seqLocked      = !state.tierUnlocks.includes(type);
+    const locked         = prestigeLocked || seqLocked;
+
+    let priceText;
+    if (prestigeLocked)    priceText = `第${cfg.unlockAt + 1}周目解鎖`;
+    else if (seqLocked)    priceText = '先買前一款才能解鎖';
+    else                   priceText = cfg.cost.toLocaleString() + ' 💰';
+
     const div = document.createElement('div');
     div.className = `ticket-option card-${type} ${locked ? 'locked-tier' : ''}`;
     div.innerHTML = `
       <div class="ticket-thumb">${locked ? '🔒' : cfg.icon}</div>
-      <div class="ticket-name">${locked ? '???' : cfg.label}</div>
-      <div class="ticket-price">${locked ? `第${cfg.unlockAt+1}周目解鎖` : cfg.cost.toLocaleString()+' 💰'}</div>
+      <div class="ticket-name">${cfg.label}</div>
+      <div class="ticket-price">${priceText}</div>
       ${locked ? '' : `<button class="buy-btn" data-type="${type}">購買</button>`}
     `;
     if (!locked) {
@@ -1543,6 +1568,7 @@ function doPrestige() {
   state.job.washDebt = 0;
   state.stats.streak = 0;
   state.jackpotMultipliers = [];
+  state.tierUnlocks = ['cheap']; // must climb from tier 1 again each cycle
 
   recalcJobStats();
   renderUpgrades();
