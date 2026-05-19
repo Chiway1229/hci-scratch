@@ -63,7 +63,7 @@
     <!-- Tabs -->
     <div id="tabs" class="tabs">
       <button class="tab-btn active" data-tab="shop">🎰 刮刮樂</button>
-      <button class="tab-btn" data-tab="job">💼 打工</button>
+      <button class="tab-btn hidden" data-tab="job">⛏️ 挖礦</button>
     </div>
 
     <!-- Shop -->
@@ -85,36 +85,29 @@
       </div>
     </section>
 
-    <!-- Job center -->
+    <!-- Mine center — only visible while in debt -->
     <section id="job-center" class="hidden">
       <div id="job-split">
-        <div id="upgrades-panel">
-          <h3 class="upgrades-title">升級道具</h3>
-          <div id="upgrades-list"></div>
-        </div>
-        <div id="wash-panel">
-          <!-- Upgrade gear icons floating around the plate (rendered by JS) -->
-          <div id="wash-gear" aria-hidden="true"></div>
+        <div id="wash-panel" class="mine-panel-solo">
           <div class="job-stage">
-            <button id="wash-btn" aria-label="洗一個碗">
-              <span class="plate-rim">
-                <span class="plate-inner">
-                  <span class="wash-icon">🧽</span>
+            <p class="mine-flavor">⛏️ 黑暗的礦坑深處，你揮舞著鎬子<br>每一下，都是為了還清那筆借款。</p>
+            <button id="wash-btn" aria-label="挖一下煤">
+              <span class="plate-rim mine-rim">
+                <span class="plate-inner mine-inner">
+                  <span class="wash-icon mine-icon">⛏️</span>
                 </span>
               </span>
             </button>
             <div id="job-summary">
-              <span><strong id="job-click-power">+1</strong><span class="js-unit">／次</span></span>
-              <span class="dot">·</span>
-              <span><strong id="job-auto-income">+0</strong><span class="js-unit">／秒</span></span>
+              <span class="mine-hint">點擊鎬子 = 挖 1 噸煤 = 還 1 筆債</span>
             </div>
           </div>
           <div id="debt-bar-wrap" class="hidden">
-            <div id="debt-bar-label">💸 欠債清除進度</div>
+            <div id="debt-bar-label">⛏️ 還債挖煤進度</div>
             <div id="debt-bar-track">
               <div id="debt-bar-fill"></div>
             </div>
-            <div id="debt-bar-text">還需洗 0 碗</div>
+            <div id="debt-bar-text">還需挖 0 噸煤</div>
           </div>
         </div>
       </div>

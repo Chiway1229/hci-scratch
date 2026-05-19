@@ -91,20 +91,8 @@ const ACHIEVEMENTS = [
   { key:'wash_while_rich',   icon:'🫧',  name:'富豪洗碗',   desc:'在擁有10,000籌碼時洗碗' },
 ];
 
-// Upgrades — drop-only, no buy buttons
-const UPGRADES = [
-  // Click upgrades — boost manual dishwashing earnings
-  { key: 'gloves',  name: '橡膠手套',     icon: '🧤', baseCost: 100,    effect: 1,   type: 'click' },
-  { key: 'soap',    name: '高效洗碗精',   icon: '🧴', baseCost: 500,    effect: 4,   type: 'click' },
-  { key: 'sprayer', name: '高壓水槍',     icon: '💦', baseCost: 2500,   effect: 15,  type: 'click' },
-  { key: 'license', name: '洗碗大師證照', icon: '📜', baseCost: 15000,  effect: 80,  type: 'click' },
-
-  // Auto upgrades — passive income per second
-  { key: 'dishwasher', name: '家用洗碗機',  icon: '🍽️', baseCost: 800,    effect: 2,   type: 'auto' },
-  { key: 'robot',      name: '洗碗機器人',  icon: '🤖', baseCost: 5000,   effect: 12,  type: 'auto' },
-  { key: 'ai',         name: 'AI 廚房系統', icon: '🧠', baseCost: 30000,  effect: 60,  type: 'auto' },
-  { key: 'chain',      name: '連鎖餐廳',    icon: '🏪', baseCost: 200000, effect: 350, type: 'auto' },
-];
+// No upgrade system — mining is a fixed punishment: each click mines 1 unit of coal,
+// reducing debt by 1. No tools, no automation, no passive income.
 
 // ── AUDIO ────────────────────────────────────────────────────────────────────
 
@@ -360,13 +348,10 @@ let state = {
   },
   jackpotMultipliers: [],
   job: {
-    upgrades: {},
-    clickPower: 1,
-    autoIncome: 0,
-    totalWashed: 0,
+    totalMined: 0,
     bankruptShown: false,
     loanCount: 0,
-    washDebt: 0,
+    coalDebt: 0,
   },
   prestige: {
     level: 0,        // 0 = first cycle (displayed as 周目 1)
@@ -386,6 +371,37 @@ function nextMultiplier() {
 }
 function multiply(amount) {
   return Math.floor(amount * state.prestige.multiplier);
+}
+
+// Tier-unlock thresholds — tiers available this prestige are spread evenly along the goal.
+// Reaching the threshold (one-way) unlocks the tier in the current cycle.
+function availableTiers() {
+  return TIER_ORDER.filter(t => CARD_TYPES[t].unlockAt <= state.prestige.level);
+}
+function tierUnlockThreshold(type) {
+  const avail = availableTiers();
+  const idx = avail.indexOf(type);
+  if (idx <= 0) return 0; // cheap (index 0) is always free
+  return Math.round(currentGoal() * idx / avail.length);
+}
+function checkTierUnlocks() {
+  let newly = [];
+  for (const type of availableTiers()) {
+    if (state.tierUnlocks.includes(type)) continue;
+    if (state.balance >= tierUnlockThreshold(type)) {
+      state.tierUnlocks.push(type);
+      newly.push(type);
+    }
+  }
+  if (newly.length) {
+    renderTicketList();
+    renderGoalTicks();
+    for (const t of newly) {
+      const cfg = CARD_TYPES[t];
+      showFloatingText(`🔓 解鎖 ${cfg.label}！`, document.getElementById('ticket-list') || document.body, '#4ade80');
+    }
+    SFX.upgrade?.();
+  }
 }
 
 // ── DOM REFS ─────────────────────────────────────────────────────────────────
@@ -429,11 +445,10 @@ function saveState() {
       // Strip internal _new flag before persisting
       deck: state.deck.map(({ _new, ...c }) => c),
       job: {
-        upgrades:      { ...state.job.upgrades },
-        totalWashed:   state.job.totalWashed,
+        totalMined:    state.job.totalMined,
         bankruptShown: state.job.bankruptShown,
         loanCount:     state.job.loanCount,
-        washDebt:      state.job.washDebt,
+        coalDebt:      state.job.coalDebt,
       },
       prestige: { ...state.prestige },
       achievements: [...state.achievements],
@@ -465,11 +480,11 @@ function loadState() {
       });
     }
     if (s.job) {
-      state.job.upgrades      = s.job.upgrades      ?? {};
-      state.job.totalWashed   = s.job.totalWashed   ?? 0;
+      // Migrate legacy field names (washDebt → coalDebt, totalWashed → totalMined)
+      state.job.totalMined    = s.job.totalMined    ?? s.job.totalWashed ?? 0;
       state.job.bankruptShown = s.job.bankruptShown ?? false;
       state.job.loanCount     = s.job.loanCount     ?? 0;
-      state.job.washDebt      = s.job.washDebt      ?? 0;
+      state.job.coalDebt      = s.job.coalDebt      ?? s.job.washDebt    ?? 0;
     }
     if (s.prestige) {
       state.prestige.level      = s.prestige.level      ?? 0;
@@ -542,6 +557,26 @@ function updateGoalUI() {
     fab.title = reached
       ? `重生！倍率 ×${state.prestige.multiplier.toFixed(1)} → ×${nextMultiplier().toFixed(1)}`
       : `達到 ${goal.toLocaleString()} 籌碼後可進入下一周目`;
+  }
+  checkTierUnlocks();
+}
+
+function renderGoalTicks() {
+  const bar = document.getElementById('goal-bar');
+  if (!bar) return;
+  bar.querySelectorAll('.goal-tick').forEach(el => el.remove());
+  const goal = currentGoal();
+  const avail = availableTiers();
+  for (let i = 1; i < avail.length; i++) {
+    const type = avail[i];
+    const threshold = tierUnlockThreshold(type);
+    const pct = (threshold / goal) * 100;
+    const tick = document.createElement('div');
+    tick.className = 'goal-tick' + (state.tierUnlocks.includes(type) ? ' reached' : '');
+    tick.style.left = `${pct}%`;
+    tick.title = `${CARD_TYPES[type].label}（${threshold.toLocaleString()} 解鎖）`;
+    tick.innerHTML = `<span class="goal-tick-icon">${CARD_TYPES[type].icon}</span>`;
+    bar.appendChild(tick);
   }
 }
 
@@ -687,120 +722,12 @@ function updateDeskDecorations() {
   });
 }
 
-// ── JOB / UPGRADES ───────────────────────────────────────────────────────────
+// ── MINING (debt-only) ─────────────────────────────────────────────────────
+// Mining is a flat punishment for taking loans. Each click reduces debt by 1.
+// No tools, no automation, no passive income. The job tab is only accessible
+// while debt > 0.
 
-function recalcJobStats() {
-  let click = 1, auto = 0;
-  for (const [key, count] of Object.entries(state.job.upgrades)) {
-    const u = UPGRADES.find(x => x.key === key);
-    if (!u || !count) continue;
-    if (u.type === 'click') click += u.effect * count;
-    else                    auto  += u.effect * count;
-  }
-  // Bake the prestige multiplier into displayed click power / auto income
-  state.job.clickPower = Math.max(1, Math.floor(click * state.prestige.multiplier));
-  state.job.autoIncome = Math.floor(auto * state.prestige.multiplier);
-  $jobClickP.textContent     = `+${state.job.clickPower.toLocaleString()}`;
-  $jobAutoIncome.textContent = `+${state.job.autoIncome.toLocaleString()}`;
-}
-
-function renderUpgrades() {
-  $upgradesList.innerHTML = '';
-  for (const u of UPGRADES) {
-    const owned = state.job.upgrades[u.key] || 0;
-    const row = document.createElement('div');
-    row.className = `upgrade-item ${owned > 0 ? 'collected' : 'undiscovered'}`;
-    row.dataset.key = u.key;
-    const descText = u.type === 'click' ? `每次洗碗 +${u.effect}/次` : `+${u.effect}/秒`;
-    row.innerHTML = `
-      <div class="up-icon">${owned > 0 ? u.icon : '❓'}</div>
-      <div class="up-info">
-        <div class="up-name">${owned > 0 ? u.name : '神秘道具'}${owned > 1 ? `<span class="up-count">×${owned}</span>` : ''}</div>
-        <div class="up-desc ${u.type}">${owned > 0 ? descText : '刮刮樂掉落'}</div>
-      </div>
-      <div class="up-level-badge">${owned > 0 ? `Lv${owned}` : '?'}</div>
-    `;
-    $upgradesList.appendChild(row);
-  }
-}
-
-function refreshUpgradeAvailability() {}
-
-// Base positions around the plate — each upgrade has its own quadrant,
-// kept well clear of the plate (radius ≈ 130px when plate is 260px wide).
-const GEAR_POSITIONS = {
-  gloves:     { x: -200, y:  -55, r: -16, icon: '🧤' },
-  soap:       { x:  198, y:  -68, r:  12, icon: '🧴' },
-  sprayer:    { x: -212, y:   70, r: -10, icon: '💦' },
-  license:    { x:  205, y:   85, r:  18, icon: '📜' },
-  dishwasher: { x:   15, y: -200, r:   4, icon: '🍽️' },
-  robot:      { x:  -15, y:  205, r:  -4, icon: '🤖' },
-  ai:         { x: -228, y:    8, r: -22, icon: '🧠' },
-  chain:      { x:  225, y:   18, r:  16, icon: '🏪' },
-};
-
-// Cluster offsets for duplicate copies (deterministic, spirals outward)
-const COPY_OFFSETS = [
-  [  0,   0], [-30,  18], [ 28, -16], [-22, -28],
-  [ 34,  24], [-12,  34], [ 18, -36], [-38,   4],
-  [ 38,  -4], [  4,  38], [ -4, -38], [-30, -18],
-];
-const MAX_COPIES = 12;
-const FLOAT_DELAYS = ['0s', '0.3s', '0.6s', '0.9s', '1.2s', '1.5s', '1.8s', '2.1s'];
-
-function renderGear(popKey) {
-  const container = document.getElementById('wash-gear');
-  if (!container) return;
-  container.innerHTML = '';
-  let delayIdx = 0;
-  for (const u of UPGRADES) {
-    const count = state.job.upgrades[u.key] || 0;
-    if (count === 0) continue;
-    const pos = GEAR_POSITIONS[u.key];
-    if (!pos) continue;
-    const display = Math.min(count, MAX_COPIES);
-    for (let i = 0; i < display; i++) {
-      const [ox, oy] = COPY_OFFSETS[i % COPY_OFFSETS.length];
-      const el = document.createElement('div');
-      el.className = 'gear-item';
-      el.textContent = pos.icon;
-      el.style.setProperty('--gx', `${pos.x + ox}px`);
-      el.style.setProperty('--gy', `${pos.y + oy}px`);
-      el.style.setProperty('--gr', `${pos.r + (i % 2 ? 6 : -6)}deg`);
-      el.style.setProperty('--gd', FLOAT_DELAYS[(delayIdx++) % FLOAT_DELAYS.length]);
-      // Animate only the newest copy of the just-obtained upgrade
-      if (u.key === popKey && i === display - 1) el.classList.add('pop-in');
-      container.appendChild(el);
-    }
-  }
-}
-
-// ── UPGRADE DROP SYSTEM ───────────────────────────────────────────────────────
-
-const DROP_RATES = { cheap:0.04, mid:0.07, deluxe:0.10, premium:0.14, elite:0.18, legend:0.23, mythic:0.28, divine:0.35 };
-const MAX_UPGRADE_LEVEL = 10;
-
-function rollUpgradeDrop(cardType) {
-  const rate = DROP_RATES[cardType] || 0.05;
-  if (Math.random() > rate) return null;
-  const eligible = UPGRADES.filter(u => (state.job.upgrades[u.key] || 0) < MAX_UPGRADE_LEVEL);
-  if (!eligible.length) return null;
-  const undiscovered = eligible.filter(u => !state.job.upgrades[u.key]);
-  const pool = undiscovered.length > 0 ? undiscovered : eligible;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function showUpgradeDrop(u) {
-  const banner = document.createElement('div');
-  banner.className = 'upgrade-drop-banner';
-  banner.innerHTML = `<span class="udb-icon">${u.icon}</span><span class="udb-text">獲得 <strong>${u.name}</strong>！ <span class="udb-sub">${u.type==='click'?`+${u.effect}/次`:`+${u.effect}/秒`}</span></span>`;
-  document.body.appendChild(banner);
-  requestAnimationFrame(() => banner.classList.add('visible'));
-  setTimeout(() => {
-    banner.classList.remove('visible');
-    setTimeout(() => banner.remove(), 600);
-  }, 2800);
-}
+function refreshUpgradeAvailability() {}  // no-op (kept as stable hook for animateBalance)
 
 // ── ACHIEVEMENT SYSTEM ────────────────────────────────────────────────────────
 
@@ -856,7 +783,7 @@ function toggleAchievements() {
 // ── TABS ─────────────────────────────────────────────────────────────────────
 
 function switchTab(name) {
-  if (name === 'shop' && state.job.washDebt > 0) {
+  if (name === 'shop' && state.job.coalDebt > 0) {
     state.activeTab = 'job';
     $tabs.querySelectorAll('.tab-btn').forEach(b =>
       b.classList.toggle('active', b.dataset.tab === 'job')
@@ -864,7 +791,7 @@ function switchTab(name) {
     $shop.classList.add('hidden');
     $jobCenter.classList.remove('hidden');
     updateScreenChrome();
-    showFloatingText('先洗完碗才能繼續刮！', $washBtn, '#f87171');
+    showFloatingText('先挖完煤還債才能繼續刮！', $washBtn, '#f87171');
     flash('rgba(248,113,113,0.18)');
     return;
   }
@@ -879,12 +806,19 @@ function switchTab(name) {
 }
 
 function updateTabLockUI() {
+  const inDebt = state.job.coalDebt > 0;
   const shopBtn = $tabs.querySelector('.tab-btn[data-tab="shop"]');
-  if (!shopBtn) return;
-  shopBtn.classList.toggle('locked', state.job.washDebt > 0);
-  shopBtn.title = state.job.washDebt > 0
-    ? `欠債未清，洗完 ${state.job.washDebt} 個碗才能回到刮刮樂`
-    : '';
+  const jobBtn  = $tabs.querySelector('.tab-btn[data-tab="job"]');
+  if (shopBtn) {
+    shopBtn.classList.toggle('locked', inDebt);
+    shopBtn.title = inDebt
+      ? `欠債未清，挖完 ${state.job.coalDebt} 噸煤才能回到刮刮樂`
+      : '';
+  }
+  // Job tab only visible while in debt
+  if (jobBtn) {
+    jobBtn.classList.toggle('hidden', !inDebt);
+  }
 }
 
 function updateScreenChrome() {
@@ -941,16 +875,6 @@ function buyCard(type) {
     y:   5  + Math.random() * 52,
     _new: true,
   });
-
-  // Sequential unlock: buying tier N unlocks tier N+1 (if prestige allows)
-  const tierIdx = TIER_ORDER.indexOf(type);
-  const nextTier = TIER_ORDER[tierIdx + 1];
-  if (nextTier && !state.tierUnlocks.includes(nextTier) &&
-      CARD_TYPES[nextTier].unlockAt <= state.prestige.level) {
-    state.tierUnlocks.push(nextTier);
-    renderTicketList();
-    showFloatingText(`解鎖：${CARD_TYPES[nextTier].label}！`, document.getElementById('ticket-list') || document.body, '#4ade80');
-  }
 
   state.stats.cardTypesBought[type] = (state.stats.cardTypesBought[type] || 0) + 1;
   const total = Object.values(state.stats.cardTypesBought).reduce((a,b) => a+b, 0);
@@ -1017,7 +941,7 @@ function renderTicketList() {
 
     let priceText;
     if (prestigeLocked)    priceText = `第${cfg.unlockAt + 1}周目解鎖`;
-    else if (seqLocked)    priceText = '先買前一款才能解鎖';
+    else if (seqLocked)    priceText = `達 ${tierUnlockThreshold(type).toLocaleString()} 元解鎖`;
     else                   priceText = cfg.cost.toLocaleString() + ' 💰';
 
     const div = document.createElement('div');
@@ -1036,8 +960,8 @@ function renderTicketList() {
 }
 
 function openCard(cardId) {
-  if (state.job.washDebt > 0) {
-    showFloatingText('先洗完碗！', $washBtn || document.body, '#f87171');
+  if (state.job.coalDebt > 0) {
+    showFloatingText('先去挖煤還債！', $washBtn || document.body, '#f87171');
     switchTab('job');
     return;
   }
@@ -1276,32 +1200,11 @@ function applyReward() {
         SFX.bankrupt();
         showModal(
           '💔', '破產了！',
-          '別擔心，到「💼 打工」分頁洗碗賺回籌碼！或點頭像右側的📱借錢。'
+          '別擔心，點頭像右側的📱借錢，挖煤還債後就能繼續刮。'
         );
       }, 900);
     }
   }
-
-  setTimeout(() => {
-    const drop = rollUpgradeDrop(type);
-    if (drop) {
-      state.job.upgrades[drop.key] = (state.job.upgrades[drop.key] || 0) + 1;
-      recalcJobStats();
-      renderUpgrades();
-      renderGear(drop.key);
-      showUpgradeDrop(drop);
-      SFX.upgrade();
-      checkAchievement('first_drop');
-      if (drop.type === 'click') checkAchievement('drop_click');
-      if (drop.type === 'auto') { checkAchievement('drop_auto'); checkAchievement('first_autoearning'); }
-      const allCollected = UPGRADES.every(u => state.job.upgrades[u.key] > 0);
-      if (allCollected) checkAchievement('all_upgrades');
-      const maxOwned = Math.max(...UPGRADES.map(u => state.job.upgrades[u.key]||0));
-      if (maxOwned >= 3) checkAchievement('upgrade_3');
-      if (maxOwned >= 5) checkAchievement('upgrade_5');
-      saveState();
-    }
-  }, 1500);
 }
 
 function triggerEffects(outcome) {
@@ -1446,7 +1349,7 @@ $tabs.addEventListener('click', (e) => {
   if (btn) switchTab(btn.dataset.tab);
 });
 
-$washBtn.addEventListener('click', washDish);
+$washBtn.addEventListener('click', mineCoal);
 
 document.querySelectorAll('.chest-btn').forEach(btn =>
   btn.addEventListener('click', () => pickChest(parseInt(btn.dataset.idx)))
@@ -1457,28 +1360,14 @@ document.getElementById('jackpot-close').addEventListener('click', () => {
   exitScratchMode();
 });
 
-// ── WASH DISH ────────────────────────────────────────────────────────────────
+// ── MINE COAL ────────────────────────────────────────────────────────────────
 
-function washDish() {
+function mineCoal() {
+  if (state.job.coalDebt <= 0) return; // mining is debt-only — no income while clean
   SFX.resume();
-  const earn = state.job.clickPower;
-  const prev = state.balance;
-  state.balance += earn;
-  state.job.totalWashed++;
-
-  if (state.job.washDebt > 0) {
-    state.job.washDebt--;
-    updateDebtUI();
-    if (state.job.washDebt === 0) {
-      showFloatingText('債務清除！', $washBtn, '#f87171');
-      SFX.win();
-      updateTabLockUI();
-    }
-  }
-
-  animateBalance(prev, state.balance);
-  SFX.wash();
-  saveState();
+  state.job.totalMined++;
+  state.job.coalDebt--;
+  updateDebtUI();
 
   $washBtn.classList.remove('bounce');
   void $washBtn.offsetWidth;
@@ -1486,13 +1375,21 @@ function washDish() {
 
   const r = $washBtn.getBoundingClientRect();
   Particles.emit('wash', r.left + r.width / 2, r.top + r.height * 0.4);
-  showFloatingText(`+${earn}`, $washBtn, '#67e8f9');
+  showFloatingText('-1 噸', $washBtn, '#a78bfa');
+  SFX.wash();
 
-  checkAchievement('first_wash');
-  if (state.job.totalWashed >= 100) checkAchievement('wash_100');
-  if (state.job.totalWashed >= 1000) checkAchievement('wash_1000');
-  if (state.job.totalWashed >= 10000) checkAchievement('wash_10000');
-  if (state.balance >= 10000) checkAchievement('wash_while_rich');
+  if (state.job.coalDebt === 0) {
+    showFloatingText('債務清除！', $washBtn, '#4ade80');
+    SFX.win();
+    updateTabLockUI();
+    setTimeout(() => { switchTab('shop'); }, 1200);
+  }
+  saveState();
+
+  checkAchievement('first_wash'); // legacy key reused as "first mine"
+  if (state.job.totalMined >= 100)   checkAchievement('wash_100');
+  if (state.job.totalMined >= 1000)  checkAchievement('wash_1000');
+  if (state.job.totalMined >= 10000) checkAchievement('wash_10000');
 }
 
 function updatePhoneIcon() {
@@ -1509,24 +1406,29 @@ function updateDebtUI() {
 
   const n = state.job.loanCount;
   const totalDebt = n > 0 ? 20 * n * (n + 1) / 2 : 0;
-  const washed = totalDebt - state.job.washDebt;
-  const pct = totalDebt > 0 ? Math.max(0, Math.min(100, (washed / totalDebt) * 100)) : 0;
+  const mined = totalDebt - state.job.coalDebt;
+  const pct = totalDebt > 0 ? Math.max(0, Math.min(100, (mined / totalDebt) * 100)) : 0;
 
-  wrap.classList.toggle('hidden', state.job.washDebt <= 0);
+  wrap.classList.toggle('hidden', state.job.coalDebt <= 0);
   if (fill) fill.style.width = `${pct}%`;
-  if (text) text.textContent = `還需洗 ${state.job.washDebt.toLocaleString()} 碗`;
+  if (text) text.textContent = `還需挖 ${state.job.coalDebt.toLocaleString()} 噸煤`;
+
+  // Update label too
+  const lbl = document.getElementById('debt-bar-label');
+  if (lbl) lbl.textContent = '⛏️ 還債挖煤進度';
 }
 
 function takeLoan() {
   SFX.resume();
   state.job.loanCount++;
   state.balance = 1000;
-  state.job.washDebt += state.job.loanCount * 20;
+  const addedDebt = state.job.loanCount * 20;
+  state.job.coalDebt += addedDebt;
   animateBalance(0, 1000);
   updatePhoneIcon();
   updateDebtUI();
   updateTabLockUI();
-  // Force user to wash dishes before scratching again
+  // Force user to mine coal before scratching again
   if (!$scratchArea.classList.contains('hidden')) {
     $scratchArea.classList.add('hidden');
     $tabs.classList.remove('hidden');
@@ -1535,19 +1437,8 @@ function takeLoan() {
   saveState();
   flash('rgba(248,113,113,0.35)');
   SFX.bankrupt();
-  showModal('📱', `借貸第 ${state.job.loanCount} 次`, `已借回至 1,000。\n洗完 ${state.job.loanCount * 20} 個碗才能繼續刮刮樂！`);
+  showModal('📱', `借貸第 ${state.job.loanCount} 次`, `已借回至 1,000。\n挖完 ${addedDebt} 噸煤才能繼續刮刮樂！`);
 }
-
-// Auto income tick — runs every second
-setInterval(() => {
-  if (state.job.autoIncome <= 0) return;
-  state.balance += state.job.autoIncome;
-  $balance.textContent = state.balance.toLocaleString();
-  refreshUpgradeAvailability();
-  updateStats();
-  updateGoalUI();
-  updateBodyWealth();
-}, 1000);
 
 // ── PRESTIGE / FULL RESET ──────────────────────────────────────────────────
 function doPrestige() {
@@ -1562,17 +1453,13 @@ function doPrestige() {
   // Soft reset: clear gameplay progress, keep prestige + cumulative stats
   state.balance = 1000;
   state.deck = [];
-  state.job.upgrades = {};
-  state.job.totalWashed = 0;
+  state.job.totalMined = 0;
   state.job.bankruptShown = false;
-  state.job.washDebt = 0;
+  state.job.coalDebt = 0;
   state.stats.streak = 0;
   state.jackpotMultipliers = [];
-  state.tierUnlocks = ['cheap']; // must climb from tier 1 again each cycle
+  state.tierUnlocks = ['cheap']; // tier unlocks are re-earned each cycle via money milestones
 
-  recalcJobStats();
-  renderUpgrades();
-  renderGear(null);
   renderDeck();
   updateStreakUI();
   setBalanceInstant(state.balance);
@@ -1590,6 +1477,7 @@ function doPrestige() {
   if (state.prestige.level >= 1) checkAchievement('unlock_elite');
   if (state.prestige.level >= 2) checkAchievement('unlock_myth');
   renderTicketList();
+  renderGoalTicks();
 
   // Celebration: rainbow burst + modal
   flash('rgba(192,132,252,0.35)');
@@ -1618,11 +1506,9 @@ document.getElementById('full-reset-btn').addEventListener('click', doFullReset)
 loadState();
 Particles.init();
 animateBalance(0, state.balance);
-recalcJobStats();
-renderUpgrades();
-renderGear(null);   // restore purchased gear icons from saved state
 updateStreakUI();
 updateGoalUI();
+renderGoalTicks();
 switchTab('shop');
 renderDeck();
 renderTicketList();
@@ -1630,8 +1516,8 @@ updateBodyWealth();
 updatePhoneIcon();
 updateDebtUI();
 updateTabLockUI();
-// On reload, if debt persists, force-switch to job tab
-if (state.job.washDebt > 0 && state.activeTab === 'shop') switchTab('job');
+// On reload, if debt persists, force-switch to mine tab
+if (state.job.coalDebt > 0 && state.activeTab === 'shop') switchTab('job');
 
 document.getElementById('phone-btn').addEventListener('click', takeLoan);
 

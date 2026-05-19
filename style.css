@@ -1843,3 +1843,100 @@ body.wealth-goal {
   background: rgba(255,255,255,0.05);
   color: #444;
 }
+
+/* ── Goal bar tick marks (tier unlock thresholds) ──────────────────────── */
+#goal-bar { position: relative; overflow: visible; }
+.goal-tick {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: rgba(255,255,255,0.35);
+  pointer-events: none;
+  transition: background 0.4s ease;
+  z-index: 2;
+}
+.goal-tick::after {
+  /* small notch above the bar */
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(120,110,180,0.7);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
+}
+.goal-tick-icon {
+  position: absolute;
+  top: -28px;
+  left: -10px;
+  font-size: 1rem;
+  filter: grayscale(0.65) opacity(0.55);
+  transition: filter 0.45s ease, transform 0.45s ease;
+  pointer-events: auto;
+  cursor: help;
+}
+.goal-tick.reached {
+  background: rgba(255,215,80,0.85);
+  box-shadow: 0 0 8px rgba(255,215,80,0.4);
+}
+.goal-tick.reached::after {
+  background: #fbbf24;
+  border-color: rgba(255,235,150,0.9);
+  box-shadow: 0 0 8px rgba(255,215,80,0.7);
+}
+.goal-tick.reached .goal-tick-icon {
+  filter: grayscale(0) opacity(1) drop-shadow(0 0 6px rgba(255,215,80,0.7));
+  transform: scale(1.15);
+}
+
+/* ── Mine panel (solo, replaces wash panel when in debt) ───────────────── */
+#wash-panel.mine-panel-solo {
+  /* Full width — no upgrade panel anymore */
+  grid-column: 1 / -1;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 35%, rgba(120,90,60,0.18) 0%, transparent 60%),
+    repeating-linear-gradient(45deg, transparent 0 14px, rgba(0,0,0,0.18) 14px 16px),
+    linear-gradient(180deg, #1a1410 0%, #0f0a08 100%) !important;
+}
+.mine-flavor {
+  text-align: center;
+  color: #d4b48a;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  letter-spacing: 0.5px;
+  margin: 0 0 18px;
+  opacity: 0.85;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+}
+.mine-hint {
+  color: #a89878;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Pickaxe button — repurpose plate styling with darker tones */
+.plate-rim.mine-rim {
+  background: linear-gradient(160deg, #4a3a28 0%, #3a2a1a 45%, #2a1d10 100%) !important;
+  border: 3px solid #5a4530 !important;
+  box-shadow:
+    inset 0 4px 8px rgba(0,0,0,0.5),
+    0 6px 18px rgba(0,0,0,0.6),
+    0 0 0 2px rgba(0,0,0,0.4) !important;
+}
+.plate-inner.mine-inner {
+  background:
+    radial-gradient(circle at 35% 30%, rgba(140,90,40,0.25) 0%, transparent 50%),
+    linear-gradient(165deg, #2a1d10 0%, #1a1208 60%, #0a0805 100%) !important;
+  border: 2px solid #3a2a1a !important;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.7) !important;
+}
+.wash-icon.mine-icon {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+
+/* Hide the legacy job-tab label state when hidden via JS */
+.tab-btn.hidden { display: none !important; }
